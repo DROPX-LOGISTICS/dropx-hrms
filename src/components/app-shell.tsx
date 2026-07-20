@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BarChart3, CalendarCheck2, CheckSquare2, Settings2, Users2 } from "lucide-react";
 import { HrmsAuthContext } from "@/lib/auth";
 import { can } from "@/lib/permissions";
@@ -17,7 +18,10 @@ export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; ac
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <Link className="brand" href="/"><span className="brand-mark small">DX</span><span><strong>DropX HRMS</strong><small>{auth.companyName}</small></span></Link>
+        <Link className="brand" href="/">
+          <Image className="brand-logo" src="/dropx-logo.png" alt="DropX" width={112} height={42} priority />
+          <span className="brand-product"><strong>People</strong><small>{auth.companyName}</small></span>
+        </Link>
         <nav aria-label="HRMS navigation">
           {nav.filter((item) => can(auth.permissions, item.permission)).map((item) => {
             const Icon = item.icon;

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { signInWithGoogle } from "./actions";
 
@@ -9,7 +10,10 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <div className="brand-mark" aria-hidden="true">DX</div>
+        <div className="login-brand">
+          <Image className="login-logo" src="/dropx-logo.png" alt="DropX" width={154} height={58} priority />
+          <span>People</span>
+        </div>
         <p className="eyebrow">DropX Logistics</p>
         <h1>People operations, in one place.</h1>
         <p className="auth-copy">Secure HRMS for employees, attendance, leave and approvals.</p>
