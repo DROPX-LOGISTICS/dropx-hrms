@@ -14,31 +14,31 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   const options = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 30 };
-  const clear = () => {
-    request.cookies.set(STORAGE_KEY, "");
-    response.cookies.set(STORAGE_KEY, "", { ...options, maxAge: 0 });
+  const clear = (key: string) => {
+    request.cookies.set(key, "");
+    response.cookies.set(key, "", { ...options, maxAge: 0 });
     for (let index = 0; index < MAX_CHUNKS; index += 1) {
-      const name = `${STORAGE_KEY}.${index}`;
+      const name = `${key}.${index}`;
       request.cookies.set(name, "");
       response.cookies.set(name, "", { ...options, maxAge: 0 });
     }
   };
-  const read = () => {
-    const legacy = request.cookies.get(STORAGE_KEY)?.value;
+  const read = (key: string) => {
+    const legacy = request.cookies.get(key)?.value;
     if (legacy) return legacy;
     let value = "";
     for (let index = 0; index < MAX_CHUNKS; index += 1) {
-      const chunk = request.cookies.get(`${STORAGE_KEY}.${index}`)?.value;
+      const chunk = request.cookies.get(`${key}.${index}`)?.value;
       if (!chunk) break;
       value += chunk;
     }
     return value || null;
   };
-  const write = (value: string) => {
-    clear();
+  const write = (key: string, value: string) => {
+    clear(key);
     const chunks = value.match(new RegExp(`.{1,${CHUNK_SIZE}}`, "g")) ?? [];
     chunks.forEach((chunk, index) => {
-      const name = `${STORAGE_KEY}.${index}`;
+      const name = `${key}.${index}`;
       request.cookies.set(name, chunk);
       response.cookies.set(name, chunk, options);
     });
@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
       autoRefreshToken: false,
       detectSessionInUrl: false,
       persistSession: true,
-      storage: { getItem: read, setItem: (_key, value) => write(value), removeItem: clear }
+      storage: { getItem: read, setItem: write, removeItem: clear }
     }
   });
   const { data } = await client.auth.getUser();

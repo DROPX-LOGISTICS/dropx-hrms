@@ -18,29 +18,29 @@ export function createServerSupabaseClient() {
     maxAge: 60 * 60 * 24 * 30
   };
 
-  const clear = () => {
-    store.set(STORAGE_KEY, "", { ...options, maxAge: 0 });
+  const clear = (key: string) => {
+    store.set(key, "", { ...options, maxAge: 0 });
     for (let index = 0; index < MAX_CHUNKS; index += 1) {
-      store.set(`${STORAGE_KEY}.${index}`, "", { ...options, maxAge: 0 });
+      store.set(`${key}.${index}`, "", { ...options, maxAge: 0 });
     }
   };
 
-  const read = () => {
-    const legacy = store.get(STORAGE_KEY)?.value;
+  const read = (key: string) => {
+    const legacy = store.get(key)?.value;
     if (legacy) return legacy;
     let value = "";
     for (let index = 0; index < MAX_CHUNKS; index += 1) {
-      const chunk = store.get(`${STORAGE_KEY}.${index}`)?.value;
+      const chunk = store.get(`${key}.${index}`)?.value;
       if (!chunk) break;
       value += chunk;
     }
     return value || null;
   };
 
-  const write = (value: string) => {
-    clear();
+  const write = (key: string, value: string) => {
+    clear(key);
     const chunks = value.match(new RegExp(`.{1,${CHUNK_SIZE}}`, "g")) ?? [];
-    chunks.forEach((chunk, index) => store.set(`${STORAGE_KEY}.${index}`, chunk, options));
+    chunks.forEach((chunk, index) => store.set(`${key}.${index}`, chunk, options));
   };
 
   return createClient(url, anonKey, {
@@ -51,12 +51,12 @@ export function createServerSupabaseClient() {
       detectSessionInUrl: false,
       persistSession: true,
       storage: {
-        getItem: () => read(),
-        setItem: (_key, value) => {
-          try { write(value); } catch { /* Middleware refreshes server sessions. */ }
+        getItem: (key) => read(key),
+        setItem: (key, value) => {
+          try { write(key, value); } catch { /* Middleware refreshes server sessions. */ }
         },
-        removeItem: () => {
-          try { clear(); } catch { /* Middleware refreshes server sessions. */ }
+        removeItem: (key) => {
+          try { clear(key); } catch { /* Middleware refreshes server sessions. */ }
         }
       }
     }
