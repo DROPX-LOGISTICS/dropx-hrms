@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { COUNTRY_CODE_OPTIONS } from "@/lib/country-codes";
 import { EmployeeDesignationOption, EmployeeLocationOption, employeeDesignationsForLocation } from "@/lib/employee-options";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -12,12 +13,19 @@ type Props = {
   designations: EmployeeDesignationOption[];
 };
 
+function CreateEmployeeButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return <button className="button primary" type="submit" disabled={disabled || pending}>{pending ? "Creating employee…" : "Create employee"}</button>;
+}
+
 export function EmployeeForm({ action, locations, designations }: Props) {
   const [autoEmployeeCode, setAutoEmployeeCode] = useState(true);
   const [locationId, setLocationId] = useState("");
   const [designationId, setDesignationId] = useState("");
   const [statutory, setStatutory] = useState<string[]>(["not_applicable"]);
   const [confirming, setConfirming] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const confirmedSubmissionRef = useRef(false);
   const selectedLocation = locations.find((location) => location.id === locationId);
   const filteredDesignations = useMemo(
     () => employeeDesignationsForLocation(designations, selectedLocation),
@@ -33,11 +41,21 @@ export function EmployeeForm({ action, locations, designations }: Props) {
     });
   }
 
-  return <form action={action} onSubmit={(event) => {
-    if (!confirming) {
+  function submitConfirmedRegistration() {
+    if (confirmedSubmissionRef.current) return;
+    confirmedSubmissionRef.current = true;
+    setConfirming(false);
+    queueMicrotask(() => formRef.current?.requestSubmit());
+  }
+
+  return <form ref={formRef} action={action} onSubmit={(event) => {
+    if (!confirmedSubmissionRef.current) {
       event.preventDefault();
       setConfirming(true);
+      return;
     }
+    confirmedSubmissionRef.current = false;
+    setConfirming(false);
   }}>
     <div className="form-grid employee-form-grid">
       <div className="field">
@@ -76,12 +94,12 @@ export function EmployeeForm({ action, locations, designations }: Props) {
         {statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}
       </fieldset>
     </div>
-    <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><button className="button primary" type="submit" disabled={!locationId || filteredDesignations.length === 0}>Create employee</button></div>
+    <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><CreateEmployeeButton disabled={!locationId || filteredDesignations.length === 0} /></div>
     {confirming ? <div className="modal-backdrop" role="presentation">
       <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="employee-confirm-title">
         <h3 id="employee-confirm-title">Confirm employee registration</h3>
         <p>Do you want to submit this employee registration?</p>
-        <div className="form-actions"><button className="button secondary" type="button" onClick={() => setConfirming(false)}>Go back</button><button className="button primary" type="submit">Yes, submit</button></div>
+        <div className="form-actions"><button className="button secondary" type="button" onClick={() => setConfirming(false)}>Go back</button><button className="button primary" type="button" onClick={submitConfirmedRegistration}>Yes, submit</button></div>
       </div>
     </div> : null}
   </form>;
