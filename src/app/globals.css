@@ -100,6 +100,12 @@ tbody tr:hover { background: #fbfcfb; }
 .activity-list li:first-child { border-top: 0; }
 .muted { color: var(--muted); }
 .inline-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.row-actions-menu { position: relative; display: inline-flex; }
+.row-actions-trigger { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 8px; color: #555; background: #fff; }
+.row-actions-trigger:hover, .row-actions-trigger[aria-expanded="true"] { color: var(--brand-red); border-color: #efb7bf; background: #fff4f2; }
+.row-actions-popover { position: fixed; z-index: 80; display: grid; min-width: 132px; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: 0 12px 28px rgba(24, 24, 27, .16); }
+.row-actions-popover a { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 7px; font-size: 13px; font-weight: 700; }
+.row-actions-popover a:hover { color: var(--brand-red); background: #fff3ed; }
 .employee-form-panel { margin-bottom: 18px; }
 .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
 .employee-form-grid { align-items: start; }

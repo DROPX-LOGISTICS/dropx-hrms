@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { EmployeeForm } from "@/components/employee-form";
+import { EmployeeActionsMenu } from "@/components/employee-actions-menu";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { requireHrmsAuth } from "@/lib/auth";
 import { listDesignations, listEmployees, listLocations } from "@/lib/data";
 import { can } from "@/lib/permissions";
-import { createEmployee, setEmployeeActive } from "./actions";
+import { createEmployee } from "./actions";
 
 export const metadata: Metadata = { title: "People" };
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export default async function PeoplePage({ searchParams }: { searchParams?: { ad
           <td>{employee.mobile}<div className="muted">{employee.email ?? "—"}</div></td>
           <td>{employee.stations?.station_code ?? "—"}</td><td>{employee.designations?.name ?? "—"}</td><td>{employee.date_of_join}</td>
           <td><StatusPill value={employee.profile_completion_status ?? "pending"} /></td><td><StatusPill value={employee.is_active ? "active" : "inactive"} /></td>
-          <td><div className="inline-actions"><Link className="button secondary small" href={`/people/${employee.id}`}>View</Link>{manage ? <form action={setEmployeeActive}><input type="hidden" name="employee_id" value={employee.id} /><input type="hidden" name="next_active" value={employee.is_active ? "false" : "true"} /><button className={employee.is_active ? "button danger small" : "button secondary small"} type="submit">{employee.is_active ? "Deactivate" : "Activate"}</button></form> : null}</div></td>
+          <td><EmployeeActionsMenu employeeId={employee.id} employeeName={employee.full_name} canEdit={manage} /></td>
         </tr>) : <tr><td className="empty-cell" colSpan={8}>No employees match these filters.</td></tr>}
       </tbody></table></div>
     </section>

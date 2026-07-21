@@ -53,6 +53,9 @@ export async function syncEmployeeBiometricEnrolment(input: {
 }) {
   if (!supabaseAdmin) throw new Error("Supabase service role key is not configured.");
   const now = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  const deactivateResult = await supabaseAdmin.from("biometric_enrolments").update({ status: "Inactive", effective_to: today, updated_at: now }).eq("company_id", input.companyId).eq("employee_id", input.employeeId).is("effective_to", null).neq("enrolment_id", input.enrolmentId);
+  if (deactivateResult.error) throw new Error(deactivateResult.error.message);
   const existingResult = await supabaseAdmin.from("biometric_enrolments").select("id, employee_id").eq("company_id", input.companyId).eq("worker_type", "employee").eq("enrolment_id", input.enrolmentId).is("effective_to", null).maybeSingle();
   if (existingResult.error) throw new Error(existingResult.error.message);
   const existing = existingResult.data as { id: string; employee_id: string | null } | null;
