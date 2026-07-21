@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 import { EmployeeForm } from "@/components/employee-form";
 import { EmployeeActionsMenu } from "@/components/employee-actions-menu";
 import { PageHeader } from "@/components/page-header";
@@ -44,7 +45,7 @@ export default async function PeoplePage({ searchParams }: { searchParams?: { ad
       </div>
       <div className="table-wrap"><table><thead><tr><th>Employee</th><th>Contact</th><th>Location</th><th>Designation</th><th>Joined</th><th>Profile</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {employees.length ? employees.map((employee) => <tr key={employee.id}>
-          <td><strong>{employee.full_name}</strong><div className="muted">{employee.employee_code ?? "No employee ID"}</div></td>
+          <td><div className="employee-name-cell"><EmployeeAvatar fullName={employee.full_name} photoUrl={employee.profile_photo_url} /><div><strong>{employee.full_name}</strong><div className="muted">{employee.employee_code ?? "No employee ID"}</div></div></div></td>
           <td>{employee.mobile}<div className="muted">{employee.email ?? "—"}</div></td>
           <td>{employee.stations?.station_code ?? "—"}</td><td>{employee.designations?.name ?? "—"}</td><td>{employee.date_of_join}</td>
           <td><StatusPill value={employee.profile_completion_status ?? "pending"} /></td><td><StatusPill value={employee.is_active ? "active" : "inactive"} /></td>

@@ -7,7 +7,8 @@ export type EmployeeRow = {
   id: string; employee_code: string | null; biometric_id: string | null; full_name: string; mobile: string; mobile_country_code: string | null;
   email: string | null; date_of_join: string; location_id: string | null; designation_id: string | null; statutory_applicability: string[] | null;
   profile_completion_status: string | null; is_active: boolean; gender?: string | null; date_of_birth?: string | null; aadhaar_number?: string | null;
-  pan_number?: string | null; bank_account_no?: string | null; ifsc?: string | null; stations?: { station_code: string; station_name: string | null } | null;
+  pan_number?: string | null; bank_account_no?: string | null; ifsc?: string | null; profile_photo_path: string | null; profile_photo_url: string | null;
+  stations?: { station_code: string; station_name: string | null } | null;
   designations?: { code: string; name: string } | null;
 };
 export type LocationRow = { id: string; station_code: string; station_name: string | null; location_model_id: string | null };
@@ -28,6 +29,22 @@ function requireAdmin() {
   return supabaseAdmin;
 }
 
+async function withProfilePhotoUrls(rows: EmployeeRow[]) {
+  const paths = [...new Set(rows.map((row) => row.profile_photo_path).filter((path): path is string => Boolean(path)))];
+  if (!paths.length) return rows.map((row) => ({ ...row, profile_photo_url: null }));
+
+  const { data, error } = await requireAdmin().storage
+    .from("employee-profile-documents")
+    .createSignedUrls(paths, 60 * 60);
+
+  if (error || !data) return rows.map((row) => ({ ...row, profile_photo_url: null }));
+  const signedUrlByPath = new Map(data.map((item) => [item.path, item.signedUrl ?? null]));
+  return rows.map((row) => ({
+    ...row,
+    profile_photo_url: row.profile_photo_path ? signedUrlByPath.get(row.profile_photo_path) ?? null : null
+  }));
+}
+
 export async function listLocations(auth: HrmsAuthContext) {
   const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name, location_model_id").eq("company_id", auth.companyId).eq("is_active", true).or("hide_from_location_list.is.null,hide_from_location_list.eq.false").order("station_code");
   if (error) throw new Error(error.message);
@@ -42,7 +59,7 @@ export async function listDesignations(auth: HrmsAuthContext) {
 }
 
 export async function listEmployees(auth: HrmsAuthContext, filters?: { status?: string; search?: string; location?: string }) {
-  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, is_active, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).order("created_at", { ascending: false });
+  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, profile_photo_path, is_active, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).order("created_at", { ascending: false });
   if (!auth.allLocations) query = query.in("location_id", permittedLocationIds(auth));
   if (filters?.status === "active") query = query.eq("is_active", true);
   if (filters?.status === "inactive") query = query.eq("is_active", false);
@@ -51,15 +68,17 @@ export async function listEmployees(auth: HrmsAuthContext, filters?: { status?: 
   if (safeSearch) query = query.or(`full_name.ilike.%${safeSearch}%,employee_code.ilike.%${safeSearch}%,mobile.ilike.%${safeSearch}%`);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as EmployeeRow[];
+  return withProfilePhotoUrls((data ?? []) as unknown as EmployeeRow[]);
 }
 
 export async function getEmployee(auth: HrmsAuthContext, employeeId: string) {
-  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, is_active, gender, date_of_birth, aadhaar_number, pan_number, bank_account_no, ifsc, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).eq("id", employeeId);
+  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, profile_photo_path, is_active, gender, date_of_birth, aadhaar_number, pan_number, bank_account_no, ifsc, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).eq("id", employeeId);
   if (!auth.allLocations) query = query.in("location_id", permittedLocationIds(auth));
   const { data, error } = await query.maybeSingle();
   if (error) throw new Error(error.message);
-  return data as unknown as EmployeeRow | null;
+  if (!data) return null;
+  const [employee] = await withProfilePhotoUrls([data as unknown as EmployeeRow]);
+  return employee;
 }
 
 export async function listAttendance(auth: HrmsAuthContext, filters: { date: string; location?: string }) {
