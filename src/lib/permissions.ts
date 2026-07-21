@@ -6,6 +6,9 @@ export const hrmsPermissions = [
   "leave.view",
   "leave.request",
   "leave.approve",
+  "exit.view",
+  "exit.manage",
+  "exit.approve",
   "settings.manage"
 ] as const;
 
@@ -14,8 +17,8 @@ export type HrmsPermission = (typeof hrmsPermissions)[number];
 const rolePermissions: Record<string, readonly HrmsPermission[]> = {
   OWNER: hrmsPermissions,
   HRMS_ADMIN: hrmsPermissions,
-  HR_MANAGER: ["overview.view", "people.view", "people.manage", "attendance.view", "leave.view", "leave.request", "leave.approve"],
-  MANAGER: ["overview.view", "people.view", "attendance.view", "leave.view", "leave.request", "leave.approve"],
+  HR_MANAGER: ["overview.view", "people.view", "people.manage", "attendance.view", "leave.view", "leave.request", "leave.approve", "exit.view", "exit.manage", "exit.approve"],
+  MANAGER: ["overview.view", "people.view", "attendance.view", "leave.view", "leave.request", "leave.approve", "exit.view", "exit.approve"],
   EMPLOYEE: ["overview.view", "people.view", "attendance.view", "leave.view", "leave.request"],
   VIEWER: ["overview.view", "people.view", "attendance.view", "leave.view"]
 };

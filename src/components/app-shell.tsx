@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, CalendarCheck2, CheckSquare2, Settings2, Users2 } from "lucide-react";
+import { BarChart3, CalendarCheck2, CheckSquare2, DoorOpen, Settings2, Users2 } from "lucide-react";
 import { HrmsAuthContext } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { signOut } from "@/app/login/actions";
@@ -11,7 +11,9 @@ const nav = [
   { href: "/attendance", label: "Attendance", permission: "attendance.view" as const, icon: CalendarCheck2 },
   { href: "/leave", label: "Leave", permission: "leave.view" as const, icon: CalendarCheck2 },
   { href: "/approvals", label: "Approvals", permission: "leave.approve" as const, icon: CheckSquare2 },
-  { href: "/settings", label: "Settings", permission: "settings.manage" as const, icon: Settings2 }
+  { href: "/exits", label: "Exit Management", permission: "exit.view" as const, icon: DoorOpen },
+  { href: "/settings", label: "Settings", permission: "settings.manage" as const, icon: Settings2 },
+  { href: "/settings/exit", label: "Exit Masters", permission: "settings.manage" as const, icon: Settings2 }
 ];
 
 export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; active: string; children: React.ReactNode }) {
