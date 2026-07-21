@@ -28,8 +28,15 @@ export function SearchableSelect({ id, name, options, placeholder, value, defaul
   const [query, setQuery] = useState(selected?.label ?? "");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const clearingForSearchRef = useRef(false);
 
-  useEffect(() => setQuery(selected?.label ?? ""), [selected?.label]);
+  useEffect(() => {
+    if (clearingForSearchRef.current) {
+      clearingForSearchRef.current = false;
+      return;
+    }
+    setQuery(selected?.label ?? "");
+  }, [selected?.label]);
   useEffect(() => {
     const close = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
@@ -71,6 +78,7 @@ export function SearchableSelect({ id, name, options, placeholder, value, defaul
         onChange={(event) => {
           setQuery(event.target.value);
           if (selectedValue) {
+            clearingForSearchRef.current = true;
             if (!controlled) setInternalValue("");
             onChange?.("");
           }
