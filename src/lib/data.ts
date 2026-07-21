@@ -1,6 +1,7 @@
 import "server-only";
 import { HrmsAuthContext } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isEmployeeDesignation } from "@/lib/employee-options";
 
 export type EmployeeRow = {
   id: string; employee_code: string | null; biometric_id: string | null; full_name: string; mobile: string; mobile_country_code: string | null;
@@ -9,8 +10,8 @@ export type EmployeeRow = {
   pan_number?: string | null; bank_account_no?: string | null; ifsc?: string | null; stations?: { station_code: string; station_name: string | null } | null;
   designations?: { code: string; name: string } | null;
 };
-export type LocationRow = { id: string; station_code: string; station_name: string | null };
-export type DesignationRow = { id: string; code: string; name: string };
+export type LocationRow = { id: string; station_code: string; station_name: string | null; location_model_id: string | null };
+export type DesignationRow = { id: string; code: string; name: string; model_ids: string[] | null; onboarding_categories: string[] | null };
 export type AttendanceRow = { id: string; punch_date: string; in_time: string | null; out_time: string | null; work_minutes: number; punch_count: number; status: string; remark: string | null; employee_id: string | null; location_id: string | null; employees?: { employee_code: string | null; full_name: string } | null; stations?: { station_code: string; station_name: string | null } | null };
 export type LeaveTypeRow = { id: string; name: string; code: string; annual_allowance: number; color: string; is_active: boolean };
 export type LeaveRequestRow = { id: string; employee_id: string; leave_type_id: string; start_date: string; end_date: string; days: number; reason: string; status: string; requested_at: string; reviewed_at: string | null; reviewer_note: string | null; employees?: { employee_code: string | null; full_name: string; location_id: string | null } | null; hr_leave_types?: { name: string; code: string; color: string } | null };
@@ -28,16 +29,16 @@ function requireAdmin() {
 }
 
 export async function listLocations(auth: HrmsAuthContext) {
-  const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name").eq("company_id", auth.companyId).eq("is_active", true).order("station_code");
+  const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name, location_model_id").eq("company_id", auth.companyId).eq("is_active", true).or("hide_from_location_list.is.null,hide_from_location_list.eq.false").order("station_code");
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as LocationRow[];
   return auth.allLocations ? rows : rows.filter((row) => auth.locationIds.includes(row.id));
 }
 
 export async function listDesignations(auth: HrmsAuthContext) {
-  const { data, error } = await requireAdmin().from("designations").select("id, code, name").eq("company_id", auth.companyId).eq("is_active", true).order("name");
+  const { data, error } = await requireAdmin().from("designations").select("id, code, name, model_ids, onboarding_categories").eq("company_id", auth.companyId).eq("is_active", true).order("name");
   if (error) throw new Error(error.message);
-  return (data ?? []) as DesignationRow[];
+  return ((data ?? []) as DesignationRow[]).filter(isEmployeeDesignation);
 }
 
 export async function listEmployees(auth: HrmsAuthContext, filters?: { status?: string; search?: string; location?: string }) {

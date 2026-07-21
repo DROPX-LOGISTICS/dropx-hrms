@@ -1,0 +1,88 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { COUNTRY_CODE_OPTIONS } from "@/lib/country-codes";
+import { EmployeeDesignationOption, EmployeeLocationOption, employeeDesignationsForLocation } from "@/lib/employee-options";
+import { SearchableSelect } from "@/components/searchable-select";
+
+type Props = {
+  action: (formData: FormData) => void | Promise<void>;
+  locations: EmployeeLocationOption[];
+  designations: EmployeeDesignationOption[];
+};
+
+export function EmployeeForm({ action, locations, designations }: Props) {
+  const [autoEmployeeCode, setAutoEmployeeCode] = useState(true);
+  const [locationId, setLocationId] = useState("");
+  const [designationId, setDesignationId] = useState("");
+  const [statutory, setStatutory] = useState<string[]>(["not_applicable"]);
+  const [confirming, setConfirming] = useState(false);
+  const selectedLocation = locations.find((location) => location.id === locationId);
+  const filteredDesignations = useMemo(
+    () => employeeDesignationsForLocation(designations, selectedLocation),
+    [designations, selectedLocation]
+  );
+
+  function toggleStatutory(value: string) {
+    if (value === "not_applicable") return setStatutory(["not_applicable"]);
+    setStatutory((current) => {
+      const withoutNone = current.filter((item) => item !== "not_applicable");
+      const next = withoutNone.includes(value) ? withoutNone.filter((item) => item !== value) : [...withoutNone, value];
+      return next.length ? next : ["not_applicable"];
+    });
+  }
+
+  return <form action={action} onSubmit={(event) => {
+    if (!confirming) {
+      event.preventDefault();
+      setConfirming(true);
+    }
+  }}>
+    <div className="form-grid employee-form-grid">
+      <div className="field">
+        <label htmlFor="employee_code">Employee ID</label>
+        <input id="employee_code" name="employee_code" disabled={autoEmployeeCode} placeholder={autoEmployeeCode ? "Generated automatically" : "e.g. EMP-1042"} />
+        <label className="checkbox-row"><input type="checkbox" name="auto_generate_employee_code" value="yes" checked={autoEmployeeCode} onChange={(event) => setAutoEmployeeCode(event.target.checked)} /> Auto-generate employee ID</label>
+      </div>
+      <div className="field"><label htmlFor="full_name">Full name *</label><input id="full_name" name="full_name" required /></div>
+      <div className="field">
+        <label htmlFor="biometric_id">Biometric enrolment ID</label>
+        <input id="biometric_id" name="biometric_id" inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated automatically if blank" />
+      </div>
+      <div className="field">
+        <label htmlFor="mobile">Mobile number *</label>
+        <div className="mobile-field">
+          <SearchableSelect id="mobile_country_code" name="mobile_country_code" options={[...COUNTRY_CODE_OPTIONS]} defaultValue="91" placeholder="Country code" required />
+          <input id="mobile" name="mobile" inputMode="numeric" required />
+        </div>
+      </div>
+      <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" /></div>
+      <div className="field"><label htmlFor="date_of_join">Date of joining *</label><input id="date_of_join" name="date_of_join" type="date" required /></div>
+      <div className="field">
+        <label htmlFor="location_id">Location *</label>
+        <SearchableSelect id="location_id" name="location_id" options={locations.map((item) => ({ value: item.id, label: `${item.station_code} · ${item.station_name ?? "Unnamed location"}` }))} value={locationId} placeholder="Search location" required onChange={(next) => { setLocationId(next); setDesignationId(""); }} />
+      </div>
+      <div className="field">
+        <label htmlFor="designation_id">Designation *</label>
+        <SearchableSelect id="designation_id" name="designation_id" options={filteredDesignations.map((item) => ({ value: item.id, label: item.name }))} value={designationId} placeholder={locationId ? "Search designation" : "Select location first"} disabled={!locationId} required onChange={setDesignationId} />
+        {locationId && filteredDesignations.length === 0 ? <span className="field-help error-text">No employee designations are configured for this location.</span> : null}
+      </div>
+      <fieldset className="field wide statutory-field">
+        <legend>Statutory applicability</legend>
+        <div className="tag-select">
+          {[{ value: "not_applicable", label: "Not Applicable" }, { value: "pf", label: "PF" }, { value: "esi", label: "ESI" }].map((item) => <button key={item.value} type="button" className={statutory.includes(item.value) ? "selected" : ""} aria-pressed={statutory.includes(item.value)} onClick={() => toggleStatutory(item.value)}>{item.label}</button>)}
+        </div>
+        {statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}
+      </fieldset>
+    </div>
+    <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><button className="button primary" type="submit" disabled={!locationId || filteredDesignations.length === 0}>Create employee</button></div>
+    {confirming ? <div className="modal-backdrop" role="presentation">
+      <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="employee-confirm-title">
+        <h3 id="employee-confirm-title">Confirm employee registration</h3>
+        <p>Do you want to submit this employee registration?</p>
+        <div className="form-actions"><button className="button secondary" type="button" onClick={() => setConfirming(false)}>Go back</button><button className="button primary" type="submit">Yes, submit</button></div>
+      </div>
+    </div> : null}
+  </form>;
+}

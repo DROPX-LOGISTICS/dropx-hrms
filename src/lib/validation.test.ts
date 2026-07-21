@@ -8,10 +8,10 @@ function form(values: Record<string, string>) {
 }
 
 describe("parseEmployeeForm", () => {
-  const valid = { full_name: "Asha Nair", mobile: "9876543210", email: "asha@example.com", date_of_join: "2026-07-20", location_id: "station-1" };
+  const valid = { auto_generate_employee_code: "yes", full_name: "Asha Nair", mobile: "9876543210", mobile_country_code: "91", email: "asha@example.com", date_of_join: "2026-07-20", location_id: "station-1", designation_id: "role-1" };
   it("normalizes valid employee input", () => {
-    const result = parseEmployeeForm(form({ ...valid, employee_code: " DX-1 ", biometric_id: " 44 " }));
-    expect(result).toEqual({ ok: true, value: { employeeCode: "DX-1", fullName: "Asha Nair", mobile: "9876543210", email: "asha@example.com", dateOfJoin: "2026-07-20", locationId: "station-1", designationId: null, biometricId: "44" } });
+    const result = parseEmployeeForm(form({ ...valid, auto_generate_employee_code: "", employee_code: " DX-1 ", biometric_id: " 44 " }));
+    expect(result).toEqual({ ok: true, value: { autoGenerateEmployeeCode: false, employeeCode: "DX-1", fullName: "Asha Nair", mobile: "9876543210", mobileCountryCode: "91", email: "asha@example.com", dateOfJoin: "2026-07-20", locationId: "station-1", designationId: "role-1", biometricId: "44", statutoryApplicability: ["not_applicable"] } });
   });
   it("accepts empty optional employee fields and strips mobile punctuation", () => {
     const result = parseEmployeeForm(form({ ...valid, mobile: "+91 98765-43210", email: "", designation_id: "role-1" }));
@@ -22,12 +22,25 @@ describe("parseEmployeeForm", () => {
       expect(result.value.designationId).toBe("role-1");
     }
   });
+  it("supports automatic IDs and selected statutory benefits", () => {
+    const data = form({ ...valid, auto_generate_employee_code: "yes", statutory_applicability: "pf" });
+    data.append("statutory_applicability", "esi");
+    const result = parseEmployeeForm(data);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.autoGenerateEmployeeCode).toBe(true);
+      expect(result.value.statutoryApplicability).toEqual(["pf", "esi"]);
+    }
+  });
   it.each([
     [{ ...valid, full_name: "A" }, "Full name"],
     [{ ...valid, mobile: "123" }, "Mobile"],
     [{ ...valid, email: "bad" }, "email"],
     [{ ...valid, date_of_join: "today" }, "date"],
-    [{ ...valid, location_id: "" }, "location"]
+    [{ ...valid, location_id: "" }, "location"],
+    [{ ...valid, designation_id: "" }, "designation"],
+    [{ ...valid, biometric_id: "ABC" }, "biometric"],
+    [{ ...valid, auto_generate_employee_code: "", employee_code: "!" }, "employee id"]
   ])("rejects invalid employee input", (values, message) => {
     const result = parseEmployeeForm(form(values));
     expect(result.ok).toBe(false);
