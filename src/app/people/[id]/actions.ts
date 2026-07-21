@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireHrmsAuth } from "@/lib/auth";
-import { generateBiometricEnrolmentId, syncEmployeeBiometricEnrolment } from "@/lib/biometric";
+import { syncEmployeeBiometricEnrolment } from "@/lib/biometric";
 import { employeeDesignationsForLocation, isEmployeeDesignation } from "@/lib/employee-options";
+import { generateEmployeeBiometricId } from "@/lib/id-generation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseEmployeeForm } from "@/lib/validation";
 
@@ -32,10 +33,16 @@ export async function updateEmployee(formData: FormData) {
 
   let biometricId = value.biometricId;
   try {
-    biometricId ||= await generateBiometricEnrolmentId(auth.companyId);
+    biometricId ||= await generateEmployeeBiometricId({
+      companyId: auth.companyId,
+      designationId: value.designationId,
+      locationId: value.locationId,
+      modelId: location.location_model_id
+    });
   } catch (error) {
     redirect(`${editPath}&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to generate biometric enrolment ID")}`);
   }
+  if (!biometricId || !/^\d{1,20}$/.test(biometricId)) redirect(`${editPath}&error=Generated%20biometric%20ID%20must%20contain%201%20to%2020%20digits`);
 
   const { error } = await supabaseAdmin.from("employees").update({
     employee_code: value.employeeCode,

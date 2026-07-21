@@ -52,7 +52,7 @@ export function EmployeeEditForm({ action, employee, locations, designations }: 
     <div className="form-grid employee-form-grid">
       <div className="field"><label htmlFor="edit_employee_code">Employee ID *</label><input id="edit_employee_code" name="employee_code" defaultValue={employee.employee_code ?? ""} required /></div>
       <div className="field"><label htmlFor="edit_full_name">Full name *</label><input id="edit_full_name" name="full_name" defaultValue={employee.full_name} required /></div>
-      <div className="field"><label htmlFor="edit_biometric_id">Biometric enrolment ID</label><input id="edit_biometric_id" name="biometric_id" defaultValue={employee.biometric_id ?? ""} inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated automatically if blank" /></div>
+      <div className="field"><label htmlFor="edit_biometric_id">Biometric enrolment ID</label><input id="edit_biometric_id" name="biometric_id" defaultValue={employee.biometric_id ?? ""} inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated from ID Generation master if blank" /></div>
       <div className="field">
         <label htmlFor="edit_mobile">Mobile number *</label>
         <div className="mobile-field"><SearchableSelect id="edit_mobile_country_code" name="mobile_country_code" options={[...COUNTRY_CODE_OPTIONS]} defaultValue={employee.mobile_country_code ?? "91"} placeholder="Country code" required /><input id="edit_mobile" name="mobile" defaultValue={employee.mobile} inputMode="numeric" required /></div>

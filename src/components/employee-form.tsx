@@ -60,13 +60,13 @@ export function EmployeeForm({ action, locations, designations }: Props) {
     <div className="form-grid employee-form-grid">
       <div className="field">
         <label htmlFor="employee_code">Employee ID</label>
-        <input id="employee_code" name="employee_code" disabled={autoEmployeeCode} placeholder={autoEmployeeCode ? "Generated automatically" : "e.g. EMP-1042"} />
-        <label className="checkbox-row"><input type="checkbox" name="auto_generate_employee_code" value="yes" checked={autoEmployeeCode} onChange={(event) => setAutoEmployeeCode(event.target.checked)} /> Auto-generate employee ID</label>
+        <input id="employee_code" name="employee_code" disabled={autoEmployeeCode} placeholder={autoEmployeeCode ? "Generated from ID Generation master" : "e.g. DROPX504"} />
+        <label className="checkbox-row"><input type="checkbox" name="auto_generate_employee_code" value="yes" checked={autoEmployeeCode} onChange={(event) => setAutoEmployeeCode(event.target.checked)} /> Use Dashboard ID Generation master</label>
       </div>
       <div className="field"><label htmlFor="full_name">Full name *</label><input id="full_name" name="full_name" required /></div>
       <div className="field">
         <label htmlFor="biometric_id">Biometric enrolment ID</label>
-        <input id="biometric_id" name="biometric_id" inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated automatically if blank" />
+        <input id="biometric_id" name="biometric_id" inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated from ID Generation master if blank" />
       </div>
       <div className="field">
         <label htmlFor="mobile">Mobile number *</label>
