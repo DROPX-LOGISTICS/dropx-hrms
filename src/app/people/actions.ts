@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { requireHrmsAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseEmployeeForm } from "@/lib/validation";
-import { generateBiometricEnrolmentId, syncEmployeeBiometricEnrolment } from "@/lib/biometric";
+import { syncEmployeeBiometricEnrolment } from "@/lib/biometric";
 import { employeeDesignationsForLocation, isEmployeeDesignation } from "@/lib/employee-options";
+import { generateEmployeeBiometricId, generateEmployeeCode } from "@/lib/id-generation";
 
 export async function createEmployee(formData: FormData) {
   const auth = await requireHrmsAuth("people.manage");
@@ -22,13 +23,22 @@ export async function createEmployee(formData: FormData) {
   if (locationError || !location) redirect("/people?add=1&error=Select%20a%20valid%20work%20location");
   if (designationError || !designation || !isEmployeeDesignation(designation)) redirect("/people?add=1&error=Select%20a%20valid%20employee%20designation");
   if (employeeDesignationsForLocation([designation], location).length !== 1) redirect("/people?add=1&error=Designation%20is%20not%20available%20at%20the%20selected%20location");
-  const employeeCode = value.autoGenerateEmployeeCode ? `EMP-${Date.now().toString(36).toUpperCase()}` : value.employeeCode;
+  let employeeCode = value.employeeCode;
   let biometricId = value.biometricId;
   try {
-    biometricId ||= await generateBiometricEnrolmentId(auth.companyId);
+    const idContext = {
+      companyId: auth.companyId,
+      designationId: value.designationId,
+      locationId: value.locationId,
+      modelId: location.location_model_id
+    };
+    biometricId ||= await generateEmployeeBiometricId(idContext);
+    if (value.autoGenerateEmployeeCode) employeeCode = await generateEmployeeCode(idContext);
   } catch (error) {
-    redirect(`/people?add=1&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to generate biometric enrolment ID")}`);
+    redirect(`/people?add=1&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to generate employee identifiers")}`);
   }
+  if (!employeeCode || !/^[A-Z0-9_-]{2,32}$/.test(employeeCode)) redirect("/people?add=1&error=Generated%20employee%20ID%20has%20an%20invalid%20format");
+  if (!biometricId || !/^\d{1,20}$/.test(biometricId)) redirect("/people?add=1&error=Generated%20biometric%20ID%20must%20contain%201%20to%2020%20digits");
   const { data: employee, error } = await supabaseAdmin.from("employees").insert({
     company_id: auth.companyId,
     employee_code: employeeCode,
