@@ -52,6 +52,14 @@ button { cursor: pointer; }
 .panel-head h2 { margin: 0; font-size: 18px; }
 .panel-body { padding: 22px; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 15px; border-radius: 9px; border: 1px solid transparent; font-weight: 750; font-size: 13px; }
+.button:disabled, .link-button:disabled { cursor: wait; opacity: .72; }
+.loading-spinner { display: inline-block; flex: 0 0 auto; width: 15px; height: 15px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: loading-spin .7s linear infinite; }
+.route-loading { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; color: var(--ink); background: radial-gradient(circle at top left, rgba(245, 164, 0, .16), transparent 44%), radial-gradient(circle at bottom right, rgba(207, 31, 53, .11), transparent 38%), #f7f8f8; text-align: center; }
+.route-loading strong { font-size: 18px; }
+.route-loading > span:last-child { color: var(--muted); font-size: 13px; }
+.route-loading-spinner { width: 34px; height: 34px; border-width: 3px; color: var(--brand-red); }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loading-spinner { animation-duration: 1.5s; } }
 .button.primary { color: #fff; background: linear-gradient(90deg, var(--brand-dark), var(--brand-red)); }
 .button.primary:hover { background: linear-gradient(90deg, #c94d12, #b91c31); }
 .button.secondary { background: #fff; border-color: var(--line); }

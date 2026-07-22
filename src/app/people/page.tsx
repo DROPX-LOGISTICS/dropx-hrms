@@ -6,6 +6,7 @@ import { EmployeeForm } from "@/components/employee-form";
 import { EmployeeActionsMenu } from "@/components/employee-actions-menu";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
+import { SubmitButton } from "@/components/submit-button";
 import { requireHrmsAuth } from "@/lib/auth";
 import { listDesignations, listEmployees, listLocations } from "@/lib/data";
 import { can } from "@/lib/permissions";
@@ -40,7 +41,7 @@ export default async function PeoplePage({ searchParams }: { searchParams?: { ad
           <input aria-label="Search employees" name="search" placeholder="Name, ID or mobile" defaultValue={searchParams?.search} />
           <select aria-label="Employee status" name="status" defaultValue={searchParams?.status ?? "active"}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
           <select aria-label="Employee location" name="location" defaultValue={searchParams?.location ?? ""}><option value="">All locations</option>{locations.map((item) => <option key={item.id} value={item.id}>{item.station_code}</option>)}</select>
-          <button className="button secondary small" type="submit">Apply</button><Link className="button secondary small" href="/people">Reset</Link>
+          <SubmitButton className="button secondary small" pendingLabel="Loading…">Apply</SubmitButton><Link className="button secondary small" href="/people">Reset</Link>
         </form>
       </div>
       <div className="table-wrap"><table><thead><tr><th>Employee</th><th>Contact</th><th>Location</th><th>Designation</th><th>Joined</th><th>Profile</th><th>Status</th><th>Actions</th></tr></thead><tbody>

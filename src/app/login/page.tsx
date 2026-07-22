@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import { SubmitButton } from "@/components/submit-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { signInWithGoogle } from "./actions";
 
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
         {searchParams?.reason ? <div className="alert error" role="alert">{searchParams.reason}</div> : null}
         <form action={signInWithGoogle}>
           <input type="hidden" name="next" value={searchParams?.next ?? "/"} />
-          <button className="button primary full" type="submit">Continue with Google</button>
+          <SubmitButton className="button primary full" pendingLabel="Opening Google…">Continue with Google</SubmitButton>
         </form>
         <p className="fine-print">Only authorised DropX accounts can continue.</p>
       </section>
