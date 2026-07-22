@@ -28,7 +28,7 @@ export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; ac
         <nav aria-label="HRMS navigation">
           {nav.filter((item) => can(auth.permissions, item.permission)).map((item) => {
             const Icon = item.icon;
-            return <Link key={item.href} className={active === item.label ? "nav-link active" : "nav-link"} href={item.href}><Icon size={18} /><span>{item.label}</span></Link>;
+            return <Link key={item.href} className={active === item.label ? "nav-link active" : "nav-link"} href={item.href}><Icon size={16} /><span>{item.label}</span></Link>;
           })}
         </nav>
         <div className="sidebar-user">

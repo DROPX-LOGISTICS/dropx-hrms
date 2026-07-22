@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { can, HrmsPermission, permissionsForRole } from "@/lib/permissions";
@@ -20,17 +21,12 @@ function isMissingTable(error: unknown) {
   return message.includes("does not exist") || message.includes("schema cache");
 }
 
-export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
-  const authClient = createServerSupabaseClient();
-  if (!authClient || !supabaseAdmin) return null;
-  const { data: authData } = await authClient.auth.getUser();
-  const user = authData.user;
-  if (!user) return null;
-
+const getCachedHrmsAccess = unstable_cache(async (userId: string) => {
+  if (!supabaseAdmin) return null;
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("id, email, full_name, company_id, role_id, location_scope_ids, is_active, is_master_owner")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
   if (!profile?.is_active || !profile.company_id) return null;
 
@@ -53,7 +49,7 @@ export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
       .from("hr_user_access")
       .select("role_code, location_ids, all_locations, is_active")
       .eq("company_id", profile.company_id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
     if (error && !isMissingTable(error)) return null;
     if (!hrAccess?.is_active) return null;
@@ -65,15 +61,31 @@ export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
   const permissions = permissionsForRole(roleCode, isOwner);
   if (!permissions.size) return null;
   return {
-    userId: user.id,
-    email: user.email ?? profile.email ?? "",
-    fullName: profile.full_name ?? user.email ?? "DropX user",
+    userId,
+    email: profile.email ?? "",
+    fullName: profile.full_name ?? profile.email ?? "DropX user",
     companyId: profile.company_id,
     companyName: company.name,
     roleCode,
-    permissions,
+    permissionCodes: [...permissions],
     locationIds,
     allLocations
+  };
+}, ["hrms-access-v1"], { revalidate: 15 });
+
+export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
+  const authClient = createServerSupabaseClient();
+  if (!authClient || !supabaseAdmin) return null;
+  const { data: authData } = await authClient.auth.getUser();
+  const user = authData.user;
+  if (!user) return null;
+  const access = await getCachedHrmsAccess(user.id);
+  if (!access) return null;
+  const { permissionCodes, ...details } = access;
+  return {
+    ...details,
+    email: user.email ?? access.email,
+    permissions: new Set<HrmsPermission>(permissionCodes)
   };
 }
 

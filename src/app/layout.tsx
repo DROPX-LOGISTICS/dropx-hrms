@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body><Suspense fallback={null}><NavigationProgress /></Suspense>{children}</body></html>;
 }
