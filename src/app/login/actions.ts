@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { AUTH_RETURN_COOKIE, AUTH_RETURN_TTL_SECONDS, resolveAuthReturnPath } from "@/lib/auth-navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { safeReturnPath } from "@/lib/validation";
 
 function requestOrigin() {
   const requestHeaders = headers();
@@ -16,7 +16,13 @@ export async function signInWithGoogle(formData: FormData) {
   const client = createServerSupabaseClient();
   if (!client) redirect("/login?reason=Authentication%20is%20not%20configured");
   const callback = new URL("/auth/callback", requestOrigin());
-  callback.searchParams.set("next", safeReturnPath(formData.get("next")));
+  cookies().set(AUTH_RETURN_COOKIE, resolveAuthReturnPath(formData.get("next")), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: AUTH_RETURN_TTL_SECONDS
+  });
   const { data, error } = await client.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: callback.toString(), queryParams: { prompt: "select_account" } }
