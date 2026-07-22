@@ -49,6 +49,7 @@ export async function syncEmployeeBiometricEnrolment(input: {
   effectiveFrom: string;
   employeeId: string;
   enrolmentId: string;
+  isActive?: boolean;
   locationId: string;
 }) {
   if (!supabaseAdmin) throw new Error("Supabase service role key is not configured.");
@@ -67,9 +68,9 @@ export async function syncEmployeeBiometricEnrolment(input: {
     employee_id: input.employeeId,
     field_executive_id: null,
     location_id: input.locationId,
-    status: "Active",
+    status: input.isActive === false ? "Inactive" : "Active",
     effective_from: input.effectiveFrom,
-    effective_to: null,
+    effective_to: input.isActive === false ? today : null,
     created_by: input.createdBy,
     updated_at: now
   };

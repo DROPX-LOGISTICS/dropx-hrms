@@ -23,8 +23,8 @@ export async function createEmployee(formData: FormData) {
   if (locationError || !location) redirect("/people?add=1&error=Select%20a%20valid%20work%20location");
   if (designationError || !designation || !isEmployeeDesignation(designation)) redirect("/people?add=1&error=Select%20a%20valid%20employee%20designation");
   if (employeeDesignationsForLocation([designation], location).length !== 1) redirect("/people?add=1&error=Designation%20is%20not%20available%20at%20the%20selected%20location");
-  let employeeCode = value.employeeCode;
-  let biometricId = value.biometricId;
+  let employeeCode = "";
+  let biometricId = "";
   try {
     const idContext = {
       companyId: auth.companyId,
@@ -32,8 +32,8 @@ export async function createEmployee(formData: FormData) {
       locationId: value.locationId,
       modelId: location.location_model_id
     };
-    biometricId ||= await generateEmployeeBiometricId(idContext);
-    if (value.autoGenerateEmployeeCode) employeeCode = await generateEmployeeCode(idContext);
+    biometricId = await generateEmployeeBiometricId(idContext);
+    employeeCode = await generateEmployeeCode(idContext);
   } catch (error) {
     redirect(`/people?add=1&error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to generate employee identifiers")}`);
   }
