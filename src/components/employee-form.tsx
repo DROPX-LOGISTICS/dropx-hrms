@@ -14,7 +14,6 @@ type Props = {
 };
 
 export function EmployeeForm({ action, locations, designations }: Props) {
-  const [autoEmployeeCode, setAutoEmployeeCode] = useState(true);
   const [locationId, setLocationId] = useState("");
   const [designationId, setDesignationId] = useState("");
   const [statutory, setStatutory] = useState<string[]>(["not_applicable"]);
@@ -53,16 +52,7 @@ export function EmployeeForm({ action, locations, designations }: Props) {
     setConfirming(false);
   }}>
     <div className="form-grid employee-form-grid">
-      <div className="field">
-        <label htmlFor="employee_code">Employee ID</label>
-        <input id="employee_code" name="employee_code" disabled={autoEmployeeCode} placeholder={autoEmployeeCode ? "Generated from ID Generation master" : "e.g. DROPX504"} />
-        <label className="checkbox-row"><input type="checkbox" name="auto_generate_employee_code" value="yes" checked={autoEmployeeCode} onChange={(event) => setAutoEmployeeCode(event.target.checked)} /> Use Dashboard ID Generation master</label>
-      </div>
       <div className="field"><label htmlFor="full_name">Full name *</label><input id="full_name" name="full_name" required /></div>
-      <div className="field">
-        <label htmlFor="biometric_id">Biometric enrolment ID</label>
-        <input id="biometric_id" name="biometric_id" inputMode="numeric" pattern="[0-9]{1,20}" placeholder="Generated from ID Generation master if blank" />
-      </div>
       <div className="field">
         <label htmlFor="mobile">Mobile number *</label>
         <div className="mobile-field">
@@ -88,6 +78,9 @@ export function EmployeeForm({ action, locations, designations }: Props) {
         </div>
         {statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}
       </fieldset>
+      <div className="field wide generated-id-note" role="note">
+        Employee ID and Biometric ID will be generated automatically from Dashboard &gt; Settings &gt; ID Generation after you select the location and designation.
+      </div>
     </div>
     <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><SubmitButton className="button primary" disabled={!locationId || filteredDesignations.length === 0} pendingLabel="Creating employee…">Create employee</SubmitButton></div>
     {confirming ? <div className="modal-backdrop" role="presentation">

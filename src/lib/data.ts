@@ -6,8 +6,11 @@ import { isEmployeeDesignation } from "@/lib/employee-options";
 export type EmployeeRow = {
   id: string; employee_code: string | null; biometric_id: string | null; full_name: string; mobile: string; mobile_country_code: string | null;
   email: string | null; date_of_join: string; location_id: string | null; designation_id: string | null; statutory_applicability: string[] | null;
-  profile_completion_status: string | null; is_active: boolean; gender?: string | null; date_of_birth?: string | null; aadhaar_number?: string | null;
-  pan_number?: string | null; bank_account_no?: string | null; ifsc?: string | null; profile_photo_path: string | null; profile_photo_url: string | null;
+  profile_completion_status: string | null; profile_completed_at?: string | null; is_active: boolean; gender?: string | null; date_of_birth?: string | null; father_name?: string | null; blood_group?: string | null;
+  aadhaar_number?: string | null; pan_number?: string | null; address?: string | null; state_code?: string | null; pincode?: string | null; landmark?: string | null;
+  emergency_contact_name?: string | null; emergency_contact_number?: string | null; emergency_contact_relation?: string | null; bank_account_no?: string | null; ifsc?: string | null;
+  aadhaar_front_path?: string | null; aadhaar_back_path?: string | null; pan_upload_path?: string | null; profile_photo_path: string | null; profile_photo_url: string | null;
+  upload_urls?: { aadhaarFront: string | null; aadhaarBack: string | null; pan: string | null; profilePhoto: string | null };
   stations?: { station_code: string; station_name: string | null } | null;
   designations?: { code: string; name: string } | null;
 };
@@ -45,6 +48,29 @@ async function withProfilePhotoUrls(rows: EmployeeRow[]) {
   }));
 }
 
+async function withEmployeeDocumentUrls(row: EmployeeRow) {
+  const paths = [row.aadhaar_front_path, row.aadhaar_back_path, row.pan_upload_path, row.profile_photo_path]
+    .filter((path): path is string => Boolean(path));
+  if (!paths.length) return {
+    ...row,
+    profile_photo_url: null,
+    upload_urls: { aadhaarFront: null, aadhaarBack: null, pan: null, profilePhoto: null }
+  };
+  const { data, error } = await requireAdmin().storage.from("employee-profile-documents").createSignedUrls(paths, 60 * 60);
+  const urls = error || !data ? new Map<string, string | null>() : new Map(data.map((item) => [item.path, item.signedUrl ?? null]));
+  const signed = (path: string | null | undefined) => path ? urls.get(path) ?? null : null;
+  return {
+    ...row,
+    profile_photo_url: signed(row.profile_photo_path),
+    upload_urls: {
+      aadhaarFront: signed(row.aadhaar_front_path),
+      aadhaarBack: signed(row.aadhaar_back_path),
+      pan: signed(row.pan_upload_path),
+      profilePhoto: signed(row.profile_photo_path)
+    }
+  };
+}
+
 export async function listLocations(auth: HrmsAuthContext) {
   const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name, location_model_id").eq("company_id", auth.companyId).eq("is_active", true).or("hide_from_location_list.is.null,hide_from_location_list.eq.false").order("station_code");
   if (error) throw new Error(error.message);
@@ -72,13 +98,12 @@ export async function listEmployees(auth: HrmsAuthContext, filters?: { status?: 
 }
 
 export async function getEmployee(auth: HrmsAuthContext, employeeId: string) {
-  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, profile_photo_path, is_active, gender, date_of_birth, aadhaar_number, pan_number, bank_account_no, ifsc, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).eq("id", employeeId);
+  let query = requireAdmin().from("employees").select("id, employee_code, biometric_id, full_name, mobile, mobile_country_code, email, date_of_join, location_id, designation_id, statutory_applicability, profile_completion_status, profile_completed_at, profile_photo_path, is_active, gender, date_of_birth, father_name, blood_group, aadhaar_number, pan_number, address, state_code, pincode, landmark, emergency_contact_name, emergency_contact_number, emergency_contact_relation, bank_account_no, ifsc, aadhaar_front_path, aadhaar_back_path, pan_upload_path, stations(station_code,station_name), designations(code,name)").eq("company_id", auth.companyId).eq("id", employeeId);
   if (!auth.allLocations) query = query.in("location_id", permittedLocationIds(auth));
   const { data, error } = await query.maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const [employee] = await withProfilePhotoUrls([data as unknown as EmployeeRow]);
-  return employee;
+  return withEmployeeDocumentUrls(data as unknown as EmployeeRow);
 }
 
 export async function listAttendance(auth: HrmsAuthContext, filters: { date: string; location?: string }) {
