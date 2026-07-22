@@ -17,19 +17,20 @@ export const dynamic = "force-dynamic";
 
 export default async function PeoplePage({ searchParams }: { searchParams?: { add?: string; error?: string; notice?: string; search?: string; status?: string; location?: string } }) {
   const auth = await requireHrmsAuth("people.view");
+  const manage = can(auth.permissions, "people.manage");
+  const adding = searchParams?.add === "1" && manage;
   const [employees, locations, designations] = await Promise.all([
     listEmployees(auth, searchParams),
     listLocations(auth),
-    listDesignations(auth)
+    adding ? listDesignations(auth) : Promise.resolve([])
   ]);
-  const manage = can(auth.permissions, "people.manage");
 
   return <AppShell auth={auth} active="People">
     <PageHeader eyebrow="Workforce master" title="People" description="Employees managed by HRMS. Field executives remain in the partner dashboard." action={manage ? <Link className="button primary" href="/people?add=1">Add employee</Link> : undefined} />
     {searchParams?.error ? <div className="alert error" role="alert">{searchParams.error}</div> : null}
     {searchParams?.notice ? <div className="alert success" role="status">{searchParams.notice}</div> : null}
 
-    {searchParams?.add === "1" && manage ? <section className="panel employee-form-panel">
+    {adding ? <section className="panel employee-form-panel">
       <div className="panel-head"><div><h2>Add employee</h2><p className="panel-subtitle">Create an employee record for DropX People.</p></div><Link className="button secondary small" href="/people">Close</Link></div>
       <div className="panel-body"><EmployeeForm action={createEmployee} locations={locations} designations={designations} /></div>
     </section> : null}

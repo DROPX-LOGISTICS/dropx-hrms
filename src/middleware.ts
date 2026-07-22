@@ -54,8 +54,11 @@ export async function middleware(request: NextRequest) {
       storage: { getItem: read, setItem: write, removeItem: clear }
     }
   });
-  const { data } = await client.auth.getUser();
-  if (!data.user) {
+  // Reading a valid session is local; Supabase only makes a refresh request when
+  // the token needs it. Protected pages still call getUser() for authoritative
+  // server-side identity validation.
+  const { data } = await client.auth.getSession();
+  if (!data.session) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(login);

@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { HrmsAuthContext } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isEmployeeDesignation } from "@/lib/employee-options";
@@ -32,15 +33,20 @@ function requireAdmin() {
   return supabaseAdmin;
 }
 
-async function withProfilePhotoUrls(rows: EmployeeRow[]) {
-  const paths = [...new Set(rows.map((row) => row.profile_photo_path).filter((path): path is string => Boolean(path)))];
-  if (!paths.length) return rows.map((row) => ({ ...row, profile_photo_url: null }));
-
+const getCachedProfileDocumentUrls = unstable_cache(async (paths: string[]) => {
+  if (!paths.length) return [];
   const { data, error } = await requireAdmin().storage
     .from("employee-profile-documents")
     .createSignedUrls(paths, 60 * 60);
+  if (error || !data) return [];
+  return data.map((item) => ({ path: item.path, signedUrl: item.signedUrl ?? null }));
+}, ["hrms-profile-document-urls-v1"], { revalidate: 5 * 60 });
 
-  if (error || !data) return rows.map((row) => ({ ...row, profile_photo_url: null }));
+async function withProfilePhotoUrls(rows: EmployeeRow[]) {
+  const paths = [...new Set(rows.map((row) => row.profile_photo_path).filter((path): path is string => Boolean(path)))];
+  if (!paths.length) return rows.map((row) => ({ ...row, profile_photo_url: null }));
+  const data = await getCachedProfileDocumentUrls(paths);
+  if (!data.length) return rows.map((row) => ({ ...row, profile_photo_url: null }));
   const signedUrlByPath = new Map(data.map((item) => [item.path, item.signedUrl ?? null]));
   return rows.map((row) => ({
     ...row,
@@ -56,8 +62,8 @@ async function withEmployeeDocumentUrls(row: EmployeeRow) {
     profile_photo_url: null,
     upload_urls: { aadhaarFront: null, aadhaarBack: null, pan: null, profilePhoto: null }
   };
-  const { data, error } = await requireAdmin().storage.from("employee-profile-documents").createSignedUrls(paths, 60 * 60);
-  const urls = error || !data ? new Map<string, string | null>() : new Map(data.map((item) => [item.path, item.signedUrl ?? null]));
+  const data = await getCachedProfileDocumentUrls(paths);
+  const urls = new Map(data.map((item) => [item.path, item.signedUrl]));
   const signed = (path: string | null | undefined) => path ? urls.get(path) ?? null : null;
   return {
     ...row,
@@ -71,17 +77,25 @@ async function withEmployeeDocumentUrls(row: EmployeeRow) {
   };
 }
 
-export async function listLocations(auth: HrmsAuthContext) {
-  const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name, location_model_id").eq("company_id", auth.companyId).eq("is_active", true).or("hide_from_location_list.is.null,hide_from_location_list.eq.false").order("station_code");
+const getCachedLocations = unstable_cache(async (companyId: string) => {
+  const { data, error } = await requireAdmin().from("stations").select("id, station_code, station_name, location_model_id").eq("company_id", companyId).eq("is_active", true).or("hide_from_location_list.is.null,hide_from_location_list.eq.false").order("station_code");
   if (error) throw new Error(error.message);
-  const rows = (data ?? []) as LocationRow[];
+  return (data ?? []) as LocationRow[];
+}, ["hrms-location-master-v1"], { revalidate: 30 });
+
+const getCachedDesignations = unstable_cache(async (companyId: string) => {
+  const { data, error } = await requireAdmin().from("designations").select("id, code, name, model_ids, onboarding_categories").eq("company_id", companyId).eq("is_active", true).order("name");
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as DesignationRow[]).filter(isEmployeeDesignation);
+}, ["hrms-designation-master-v1"], { revalidate: 30 });
+
+export async function listLocations(auth: HrmsAuthContext) {
+  const rows = await getCachedLocations(auth.companyId);
   return auth.allLocations ? rows : rows.filter((row) => auth.locationIds.includes(row.id));
 }
 
 export async function listDesignations(auth: HrmsAuthContext) {
-  const { data, error } = await requireAdmin().from("designations").select("id, code, name, model_ids, onboarding_categories").eq("company_id", auth.companyId).eq("is_active", true).order("name");
-  if (error) throw new Error(error.message);
-  return ((data ?? []) as DesignationRow[]).filter(isEmployeeDesignation);
+  return getCachedDesignations(auth.companyId);
 }
 
 export async function listEmployees(auth: HrmsAuthContext, filters?: { status?: string; search?: string; location?: string }) {
