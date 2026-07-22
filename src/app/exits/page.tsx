@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusPill } from "@/components/status-pill";
+import { SubmitButton } from "@/components/submit-button";
 import { requireHrmsAuth } from "@/lib/auth";
 import { listExitCases, listExitEligibleEmployees, loadExitMasters } from "@/lib/exit-data";
 import { can } from "@/lib/permissions";
@@ -40,14 +41,14 @@ export default async function ExitsPage({ searchParams }: { searchParams?: { cre
         <div className="field"><label htmlFor="termination_reason">Reason *</label><SearchableSelect id="termination_reason" name="reason_id" placeholder="Search reason" required options={terminationReasons.map((reason) => ({ value: reason.id, label: reason.name }))} /></div>
         <div className="field"><label htmlFor="effective_date">Effective / proposed last working date *</label><input id="effective_date" name="effective_date" type="date" required /></div>
         <div className="field wide"><label htmlFor="confidential_reason">Detailed business rationale *</label><textarea id="confidential_reason" name="confidential_reason" minLength={3} required /></div>
-      </div><div className="form-actions"><Link className="button secondary" href="/exits">Cancel</Link><button className="button primary" type="submit">Create and route for approval</button></div></form></div>
+      </div><div className="form-actions"><Link className="button secondary" href="/exits">Cancel</Link><SubmitButton className="button primary" pendingLabel="Creating exit case…">Create and route for approval</SubmitButton></div></form></div>
     </section> : null}
     <section className="panel">
       <div className="panel-head"><h2>Exit register</h2><form className="toolbar" method="get">
         <input aria-label="Search exit cases" name="search" placeholder="Case, employee or ID" defaultValue={searchParams?.search} />
         <select aria-label="Exit scenario" name="scenario" defaultValue={searchParams?.scenario ?? ""}><option value="">All scenarios</option><option value="resignation">Resignation</option><option value="termination">Termination</option><option value="other">Other</option></select>
         <select aria-label="Exit status" name="status" defaultValue={searchParams?.status ?? ""}><option value="">All statuses</option>{["submitted","under_review","approved","notice_period","clearance","documents_ready","closed","rejected","withdrawal_requested","withdrawn","on_hold"].map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}</select>
-        <button className="button secondary small" type="submit">Apply</button><Link className="button secondary small" href="/exits">Reset</Link>
+        <SubmitButton className="button secondary small" pendingLabel="Loading…">Apply</SubmitButton><Link className="button secondary small" href="/exits">Reset</Link>
       </form></div>
       <div className="table-wrap"><table><thead><tr><th>Case</th><th>Employee</th><th>Type</th><th>Last working date</th><th>Stage</th><th>Status</th><th>Action</th></tr></thead><tbody>{cases.length ? cases.map((item) => {
         const employee = relation(item.employees); const station = relation(employee?.stations);

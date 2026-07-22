@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { COUNTRY_CODE_OPTIONS } from "@/lib/country-codes";
 import { EmployeeDesignationOption, EmployeeLocationOption, employeeDesignationsForLocation } from "@/lib/employee-options";
 import { SearchableSelect } from "@/components/searchable-select";
+import { SubmitButton } from "@/components/submit-button";
 
 type EditableEmployee = {
   id: string;
@@ -20,11 +20,6 @@ type EditableEmployee = {
   designation_id: string | null;
   statutory_applicability: string[] | null;
 };
-
-function SaveButton({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
-  return <button className="button primary" type="submit" disabled={disabled || pending}>{pending ? "Saving changes…" : "Save changes"}</button>;
-}
 
 export function EmployeeEditForm({ action, employee, locations, designations }: {
   action: (formData: FormData) => void | Promise<void>;
@@ -74,6 +69,6 @@ export function EmployeeEditForm({ action, employee, locations, designations }: 
         {statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}
       </fieldset>
     </div>
-    <div className="form-actions"><Link className="button secondary" href={`/people/${employee.id}`}>Cancel</Link><SaveButton disabled={!locationId || !designationId || filteredDesignations.length === 0} /></div>
+    <div className="form-actions"><Link className="button secondary" href={`/people/${employee.id}`}>Cancel</Link><SubmitButton className="button primary" disabled={!locationId || !designationId || filteredDesignations.length === 0} pendingLabel="Saving changes…">Save changes</SubmitButton></div>
   </form>;
 }

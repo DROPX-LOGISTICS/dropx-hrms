@@ -2,21 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { COUNTRY_CODE_OPTIONS } from "@/lib/country-codes";
 import { EmployeeDesignationOption, EmployeeLocationOption, employeeDesignationsForLocation } from "@/lib/employee-options";
 import { SearchableSelect } from "@/components/searchable-select";
+import { SubmitButton } from "@/components/submit-button";
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
   locations: EmployeeLocationOption[];
   designations: EmployeeDesignationOption[];
 };
-
-function CreateEmployeeButton({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
-  return <button className="button primary" type="submit" disabled={disabled || pending}>{pending ? "Creating employee…" : "Create employee"}</button>;
-}
 
 export function EmployeeForm({ action, locations, designations }: Props) {
   const [autoEmployeeCode, setAutoEmployeeCode] = useState(true);
@@ -94,7 +89,7 @@ export function EmployeeForm({ action, locations, designations }: Props) {
         {statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}
       </fieldset>
     </div>
-    <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><CreateEmployeeButton disabled={!locationId || filteredDesignations.length === 0} /></div>
+    <div className="form-actions"><Link className="button secondary" href="/people">Cancel</Link><SubmitButton className="button primary" disabled={!locationId || filteredDesignations.length === 0} pendingLabel="Creating employee…">Create employee</SubmitButton></div>
     {confirming ? <div className="modal-backdrop" role="presentation">
       <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="employee-confirm-title">
         <h3 id="employee-confirm-title">Confirm employee registration</h3>

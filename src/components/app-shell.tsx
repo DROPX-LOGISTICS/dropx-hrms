@@ -4,6 +4,7 @@ import { BarChart3, CalendarCheck2, CheckSquare2, DoorOpen, Settings2, Users2 } 
 import { HrmsAuthContext } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { signOut } from "@/app/login/actions";
+import { SubmitButton } from "@/components/submit-button";
 
 const nav = [
   { href: "/", label: "Overview", permission: "overview.view" as const, icon: BarChart3 },
@@ -33,7 +34,7 @@ export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; ac
         <div className="sidebar-user">
           <div className="avatar">{auth.fullName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</div>
           <div><strong>{auth.fullName}</strong><small>{auth.roleCode.replaceAll("_", " ")}</small></div>
-          <form action={signOut}><button className="link-button" type="submit">Sign out</button></form>
+          <form action={signOut}><SubmitButton className="link-button" pendingLabel="Signing out…">Sign out</SubmitButton></form>
         </div>
       </aside>
       <main className="content">{children}</main>
