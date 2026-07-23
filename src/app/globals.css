@@ -31,6 +31,9 @@ button { cursor: pointer; }
 .sidebar nav { display: grid; gap: 3px; }
 .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; color: #515151; font-weight: 650; font-size: 12.5px; transition: color .15s ease, background .15s ease; }
 .nav-link:hover, .nav-link.active { color: var(--brand-red); background: linear-gradient(90deg, rgba(222, 90, 22, 0.14), rgba(207, 31, 53, 0.12)); }
+.nav-link.section-active { color: var(--brand-red); font-weight: 800; }
+.settings-subnav { display: grid; gap: 2px; margin: -1px 0 3px 14px; padding-left: 8px; border-left: 1px solid #eadfd8; }
+.nav-link.sub-nav-link { min-height: 30px; padding: 6px 8px; font-size: 11px; }
 .sidebar-user { margin-top: auto; padding: 13px 8px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 31px 1fr; gap: 8px; align-items: center; }
 .sidebar-user strong { display: block; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-user form { grid-column: 2; min-width: 0; }
@@ -136,6 +139,13 @@ tbody tr:hover { background: #fbfcfb; }
 .row-actions-popover a:hover { color: var(--brand-red); background: #fff3ed; }
 .employee-form-panel { margin-bottom: 14px; }
 .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.settings-directory { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.settings-card { display: flex; align-items: flex-start; gap: 11px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: var(--shadow); transition: border-color .15s ease, transform .15s ease; }
+.settings-card:hover { border-color: #efc5a8; transform: translateY(-1px); }
+.settings-card > svg { flex: 0 0 auto; margin-top: 1px; color: var(--brand-red); }
+.settings-card strong, .settings-card small { display: block; }
+.settings-card strong { font-size: 12px; }
+.settings-card small { margin-top: 4px; color: var(--muted); font-size: 10.5px; line-height: 1.4; }
 .employee-form-grid { align-items: start; }
 .generated-id-note { padding: 12px 14px; border: 1px solid #f0d1b4; border-radius: 9px; color: #744016; background: #fff8ef; font-size: 12px; line-height: 1.5; }
 .generated-id-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; padding: 10px 12px; border: 1px solid #f0d1b4; border-radius: 8px; background: #fff8ef; }
@@ -222,12 +232,12 @@ tbody tr:hover { background: #fbfcfb; }
 .master-accordion summary span small { margin-top: 4px; color: var(--muted); text-transform: capitalize; }
 .master-accordion form { padding: 14px; border-top: 1px solid var(--line); }
 .payroll-stats .text-value { max-width: 100%; overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
-.payroll-head-entry { grid-template-columns: 1.25fr 1fr 1fr 90px auto; }
+.payroll-head-create, .payroll-head-edit { grid-template-columns: 1.2fr 1fr 1.15fr auto; }
 .payroll-head-editors { border-top: 1px solid var(--line); }
 .payroll-head-editors > h3 { margin: 0 0 11px; font-size: 13px; }
 .system-badge, .locked-label, .method-label { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 8px; border-radius: 6px; color: #785000; background: #fff7df; font-size: 10.5px; font-weight: 800; }
 .locked-label { color: var(--muted); background: #f4f5f6; }
-.salary-new-config { grid-template-columns: 1.2fr 1fr 1fr 1.7fr auto; }
+.salary-config-create { grid-template-columns: 1fr 1.4fr auto; }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 24px 0 12px; }
 .section-heading h2 { margin: 0; font-size: 19px; }
 .section-heading p:not(.eyebrow) { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
@@ -243,6 +253,25 @@ tbody tr:hover { background: #fbfcfb; }
 .config-badges em.active { color: var(--green); background: var(--green-soft); }
 .config-badges em.inactive { color: var(--muted); background: #f1f2f4; }
 .salary-config-card > form { overflow-x: auto; padding: 15px; }
+.salary-definition-toolbar { min-width: 920px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.salary-definition-toolbar p { margin: 3px 0 0; color: var(--muted); font-size: 10.5px; }
+.salary-definition-table { min-width: 920px; table-layout: fixed; border: 1px solid var(--line); }
+.salary-definition-table th:nth-child(1) { width: 31%; }
+.salary-definition-table th:nth-child(2) { width: 29%; }
+.salary-definition-table th:nth-child(3), .salary-definition-table th:nth-child(4) { width: 16%; }
+.salary-definition-table th:nth-child(5) { width: 8%; text-align: center; }
+.salary-definition-table th small { display: block; margin-top: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0; line-height: 1.35; text-transform: none; }
+.salary-definition-table td:last-child { text-align: center; }
+.salary-definition-table input { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid #d2d7d3; border-radius: 7px; background: #fff; font-size: 11.5px; }
+.salary-definition-table input:focus { outline: 2px solid #fff0e5; border-color: var(--brand-dark); }
+.salary-definition-table .formula-input { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.salary-definition-table td > small, .custom-value-label + small { display: block; margin-top: 3px; color: var(--muted); font-size: 9.5px; }
+.custom-value-label { display: inline-flex; padding: 5px 8px; border-radius: 6px; color: #785000; background: #fff7df; font-size: 10.5px; font-weight: 800; }
+.salary-definition-actions { min-width: 920px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; }
+.salary-definition-actions p { margin: 0; color: var(--muted); font-size: 10.5px; }
+.salary-definition-actions code { color: #9d3e12; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.icon-button { display: inline-grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: #555; background: #fff; }
+.icon-button.danger { color: var(--red); border-color: #f0c7c2; background: #fff4f2; }
 .salary-config-meta { min-width: 850px; margin-bottom: 16px; }
 .salary-config-meta .wide { grid-column: span 2; }
 .salary-equation-toolbar { min-width: 1040px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 11px 12px; border: 1px solid #f0e1c6; border-radius: 8px 8px 0 0; background: #fffbf3; }
@@ -265,6 +294,6 @@ tbody tr:hover { background: #fbfcfb; }
 .formula-status.error { color: var(--red); background: #fff0ee; }
 .template-editor { min-height: 190px !important; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.55; }
 .recipient-grid { display: flex; gap: 10px 18px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
-@media (max-width: 1050px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .two-column { grid-template-columns: 1fr; } }
+@media (max-width: 1050px) { .stats-grid, .settings-directory { grid-template-columns: repeat(2, 1fr); } .two-column { grid-template-columns: 1fr; } }
 @media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .settlement-entry, .inline-form.exit-update, .generated-id-summary { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .settlement-entry, .inline-form.exit-update, .generated-id-summary { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar { align-items: flex-start; flex-direction: column; } }

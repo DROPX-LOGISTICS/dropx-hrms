@@ -1,84 +1,123 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { saveSalaryConfiguration } from "@/app/settings/salary/actions";
+import { SearchableSelect } from "@/components/searchable-select";
 import { SubmitButton } from "@/components/submit-button";
-import { calculatePayrollConfiguration, PayrollCalculationType } from "@/lib/payroll-formula";
 import { PayrollHeadRow, SalaryConfigurationRow } from "@/lib/payroll";
 
-const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 });
-const typeLabel: Record<PayrollHeadRow["head_type"], string> = { ctc: "CTC", earning: "Earning", deduction: "Deduction", employer_contribution: "Employer contribution", reimbursement: "Reimbursement" };
+type EditorRow = {
+  key: string;
+  payrollHeadId: string;
+  valueExpression: string;
+  minimumValue: string;
+  maximumValue: string;
+};
+
+const typeLabel: Record<PayrollHeadRow["head_type"], string> = {
+  ctc: "System CTC",
+  employee_earning: "Employee Earning",
+  employee_deduction: "Employee Deduction",
+  statutory_deduction: "Statutory Deduction",
+  statutory_contribution: "Statutory Contribution"
+};
+
+function initialRows(configuration: SalaryConfigurationRow, heads: PayrollHeadRow[]): EditorRow[] {
+  const rows = configuration.hr_salary_configuration_items.map((item) => ({
+    key: item.id,
+    payrollHeadId: item.payroll_head_id,
+    valueExpression: item.value_expression ?? item.formula ?? (item.fixed_amount === null ? "" : String(item.fixed_amount)),
+    minimumValue: item.minimum_value === null ? "" : String(item.minimum_value),
+    maximumValue: item.maximum_value === null ? "" : String(item.maximum_value)
+  }));
+  if (!rows.some((row) => heads.find((head) => head.id === row.payrollHeadId)?.code === "CTC")) {
+    const ctc = heads.find((head) => head.code === "CTC");
+    if (ctc) rows.unshift({ key: `ctc-${ctc.id}`, payrollHeadId: ctc.id, valueExpression: "", minimumValue: "", maximumValue: "" });
+  }
+  return rows;
+}
 
 export function SalaryConfigurationEditor({ configuration, heads }: { configuration: SalaryConfigurationRow; heads: PayrollHeadRow[] }) {
-  const itemByHead = new Map(configuration.hr_salary_configuration_items.map((item) => [item.payroll_head_id, item]));
-  const [ctc, setCtc] = useState(600000);
-  const [factor, setFactor] = useState(configuration.annualisation_factor);
-  const [formulas, setFormulas] = useState<Record<string, string>>(() => Object.fromEntries(heads.map((head) => [head.id, itemByHead.get(head.id)?.formula ?? (head.code === "BASIC_SALARY" ? "CTC * 50%" : "0")])));
-  const [fixedAmounts, setFixedAmounts] = useState<Record<string, number>>(() => Object.fromEntries(heads.map((head) => [head.id, itemByHead.get(head.id)?.fixed_amount ?? 0])));
-  const [calculationTypes, setCalculationTypes] = useState<Record<string, PayrollCalculationType>>(() => Object.fromEntries(heads.map((head) => [head.id, head.code === "CTC" ? "input" : head.code === "BASIC_SALARY" ? "formula" : itemByHead.get(head.id)?.calculation_type ?? "formula"])));
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(() => Object.fromEntries(heads.map((head) => [head.id, head.is_system || itemByHead.get(head.id)?.is_enabled !== false])));
+  const [rows, setRows] = useState<EditorRow[]>(() => initialRows(configuration, heads));
+  const rowSequence = useRef(0);
+  const selectedIds = new Set(rows.map((row) => row.payrollHeadId).filter(Boolean));
 
-  const preview = useMemo(() => {
-    try {
-      const values = calculatePayrollConfiguration(heads.map((head) => ({
-        code: head.code,
-        calculationType: head.code === "CTC" ? "input" : head.code === "BASIC_SALARY" ? "formula" : calculationTypes[head.id],
-        formula: formulas[head.id],
-        fixedAmount: fixedAmounts[head.id]
-      })), { CTC: ctc });
-      return { values, error: null };
-    } catch (error) {
-      return { values: {} as Record<string, number>, error: error instanceof Error ? error.message : "Unable to calculate preview." };
-    }
-  }, [calculationTypes, ctc, fixedAmounts, formulas, heads]);
+  function updateRow(key: string, values: Partial<EditorRow>) {
+    setRows((current) => current.map((row) => row.key === key ? { ...row, ...values } : row));
+  }
+  function addRow() {
+    rowSequence.current += 1;
+    setRows((current) => [...current, {
+      key: `new-${Date.now()}-${rowSequence.current}`,
+      payrollHeadId: "",
+      valueExpression: "",
+      minimumValue: "",
+      maximumValue: ""
+    }]);
+  }
+  function removeRow(key: string) {
+    setRows((current) => current.filter((row) => row.key !== key));
+  }
 
-  return (
-    <details className="salary-config-card" open={configuration.is_default}>
-      <summary>
-        <span><strong>{configuration.name}</strong><small>{configuration.code} · Effective {configuration.effective_from}</small></span>
-        <span className="config-badges">{configuration.is_default ? <em>Default</em> : null}<em className={configuration.is_active ? "active" : "inactive"}>{configuration.is_active ? "Active" : "Inactive"}</em></span>
-      </summary>
-      <form action={saveSalaryConfiguration}>
-        <input name="configuration_id" type="hidden" value={configuration.id} />
-        <div className="form-grid salary-config-meta">
-          <div className="field"><label htmlFor={`name-${configuration.id}`}>Configuration name</label><input id={`name-${configuration.id}`} name="name" defaultValue={configuration.name} required /></div>
-          <div className="field"><label>Code</label><input value={configuration.code} disabled /></div>
-          <div className="field"><label htmlFor={`from-${configuration.id}`}>Effective from</label><input id={`from-${configuration.id}`} name="effective_from" type="date" defaultValue={configuration.effective_from} required /></div>
-          <div className="field"><label htmlFor={`to-${configuration.id}`}>Effective to</label><input id={`to-${configuration.id}`} name="effective_to" type="date" defaultValue={configuration.effective_to ?? ""} /></div>
-          <div className="field"><label htmlFor={`factor-${configuration.id}`}>Annualisation factor</label><input id={`factor-${configuration.id}`} name="annualisation_factor" type="number" min="1" max="365" value={factor} onChange={(event) => setFactor(Number(event.target.value) || 12)} required /><small>12 converts annual heads to monthly amounts.</small></div>
-          <div className="field wide"><label htmlFor={`description-${configuration.id}`}>Description</label><input id={`description-${configuration.id}`} name="description" defaultValue={configuration.description ?? ""} /></div>
-          <label className="checkbox-row"><input name="is_default" type="checkbox" defaultChecked={configuration.is_default} /> Default configuration</label>
-          <label className="checkbox-row"><input name="is_active" type="checkbox" defaultChecked={configuration.is_active} /> Active</label>
-        </div>
-
-        <div className="salary-equation-toolbar">
-          <div><strong>Pay head equations</strong><p>Use pay head codes, arithmetic and percentages. Example: <code>BASIC_SALARY * 40%</code>.</p></div>
-          <div className="reference-chips" aria-label="Available equation references">{heads.map((head) => <code key={head.id}>{head.code}</code>)}</div>
-        </div>
-
-        <div className="salary-equation-grid salary-equation-head"><span>Pay head</span><span>Method</span><span>Equation / amount</span><span>Annual preview</span><span>Monthly preview</span><span>Use</span></div>
-        {heads.map((head) => {
-          const method = head.code === "CTC" ? "input" : head.code === "BASIC_SALARY" ? "formula" : calculationTypes[head.id];
-          const annual = preview.values[head.code];
-          return <div className="salary-equation-grid" key={head.id}>
-            <div className="pay-head-name"><strong>{head.name}</strong><small>{head.code} · {typeLabel[head.head_type]}</small></div>
-            <div>
-              {head.code === "CTC" ? <span className="method-label">CTC input</span> : head.code === "BASIC_SALARY" ? <><input name={`calculation_type:${head.id}`} type="hidden" value="formula" /><span className="method-label">Equation</span></> : <select aria-label={`${head.name} calculation method`} name={`calculation_type:${head.id}`} value={method} onChange={(event) => setCalculationTypes((current) => ({ ...current, [head.id]: event.target.value as PayrollCalculationType }))}><option value="formula">Equation</option><option value="fixed">Fixed annual amount</option></select>}
-            </div>
-            <div>
-              {head.code === "CTC" ? <span className="method-label">Entered when assigning salary</span> : method === "fixed" ? <input aria-label={`${head.name} fixed amount`} name={`fixed_amount:${head.id}`} type="number" min="0" step="0.01" value={fixedAmounts[head.id]} onChange={(event) => setFixedAmounts((current) => ({ ...current, [head.id]: Number(event.target.value) }))} required /> : <input aria-label={`${head.name} equation`} className="formula-input" name={`formula:${head.id}`} value={formulas[head.id]} onChange={(event) => setFormulas((current) => ({ ...current, [head.id]: event.target.value }))} placeholder="CTC * 10%" required />}
-            </div>
-            <strong className="preview-amount">{Number.isFinite(annual) ? currency.format(annual) : "—"}</strong>
-            <span className="preview-amount">{Number.isFinite(annual) && factor > 0 ? currency.format(annual / factor) : "—"}</span>
-            <label className="equation-enabled"><input name={`enabled:${head.id}`} type="checkbox" checked={head.is_system || enabled[head.id]} disabled={head.is_system} onChange={(event) => setEnabled((current) => ({ ...current, [head.id]: event.target.checked }))} />{head.is_system ? <input name={`enabled:${head.id}`} type="hidden" value="on" /> : null}</label>
-          </div>;
-        })}
-        <div className="salary-preview-bar">
-          <div className="field"><label htmlFor={`ctc-${configuration.id}`}>Preview annual CTC</label><input id={`ctc-${configuration.id}`} type="number" min="0" step="1000" value={ctc} onChange={(event) => setCtc(Number(event.target.value))} /></div>
-          <div className={preview.error ? "formula-status error" : "formula-status success"}>{preview.error ?? "All equations are valid. Preview recalculates instantly."}</div>
-          <SubmitButton className="button primary" pendingLabel="Saving equations…">Save configuration</SubmitButton>
-        </div>
-      </form>
-    </details>
-  );
+  return <details className="salary-config-card" open>
+    <summary>
+      <span><strong>{configuration.name}</strong><small>Configuration code: {configuration.code}</small></span>
+      <span className="config-badges"><em className="active">{rows.length} payroll {rows.length === 1 ? "head" : "heads"}</em></span>
+    </summary>
+    <form action={saveSalaryConfiguration}>
+      <input name="configuration_id" type="hidden" value={configuration.id} />
+      <div className="salary-definition-toolbar">
+        <div><strong>Payroll head values</strong><p>Add only the heads required for this salary structure. CTC remains the protected custom input.</p></div>
+        <button className="button secondary small" type="button" onClick={addRow}><Plus size={14} /> Add payroll head</button>
+      </div>
+      <div className="table-wrap">
+        <table className="salary-definition-table">
+          <thead><tr>
+            <th>Payroll head</th>
+            <th>Value <small>Enter a constant value or define an equation, or leave blank for custom.</small></th>
+            <th>Minimum value</th>
+            <th>Maximum value</th>
+            <th>Action</th>
+          </tr></thead>
+          <tbody>
+            {rows.map((row) => {
+              const selectedHead = heads.find((head) => head.id === row.payrollHeadId);
+              const isCtc = selectedHead?.code === "CTC";
+              const options = heads
+                .filter((head) => (head.is_active || head.id === row.payrollHeadId) && (!selectedIds.has(head.id) || head.id === row.payrollHeadId))
+                .map((head) => ({ value: head.id, label: `${head.name} · ${head.code} · ${typeLabel[head.head_type]}${head.is_active ? "" : " · Inactive"}` }));
+              return <tr key={row.key}>
+                <td>
+                  <SearchableSelect
+                    id={`payroll-head-${configuration.id}-${row.key}`}
+                    name="payroll_head_id"
+                    options={options}
+                    placeholder="Search payroll head"
+                    value={row.payrollHeadId}
+                    disabled={isCtc}
+                    required
+                    onChange={(payrollHeadId) => updateRow(row.key, { payrollHeadId, valueExpression: payrollHeadId === heads.find((head) => head.code === "CTC")?.id ? "" : row.valueExpression })}
+                  />
+                </td>
+                <td>
+                  {isCtc
+                    ? <><input name="value_expression" type="hidden" value="" /><span className="custom-value-label">Custom input</span><small>Entered for each employee.</small></>
+                    : <input aria-label={`${selectedHead?.name ?? "Payroll head"} value`} className="formula-input" name="value_expression" value={row.valueExpression} onChange={(event) => updateRow(row.key, { valueExpression: event.target.value })} placeholder="Example: CTC * 50%" />}
+                </td>
+                <td><input aria-label={`${selectedHead?.name ?? "Payroll head"} minimum value`} name="minimum_value" type="number" min="0" step="0.01" value={row.minimumValue} onChange={(event) => updateRow(row.key, { minimumValue: event.target.value })} placeholder="Optional" /></td>
+                <td><input aria-label={`${selectedHead?.name ?? "Payroll head"} maximum value`} name="maximum_value" type="number" min="0" step="0.01" value={row.maximumValue} onChange={(event) => updateRow(row.key, { maximumValue: event.target.value })} placeholder="Optional" /></td>
+                <td>{isCtc ? <span className="locked-label">Protected</span> : <button aria-label={`Remove ${selectedHead?.name ?? "payroll head"} row`} className="icon-button danger" type="button" onClick={() => removeRow(row.key)}><Trash2 size={15} /></button>}</td>
+              </tr>;
+            })}
+            {!rows.length ? <tr><td className="empty-cell" colSpan={5}>Add a payroll head to configure this salary structure.</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+      <div className="salary-definition-actions">
+        <p>Equations may reference the code of another selected payroll head, for example <code>CTC * 50%</code>.</p>
+        <SubmitButton className="button primary" pendingLabel="Saving salary configuration…">Save</SubmitButton>
+      </div>
+    </form>
+  </details>;
 }
