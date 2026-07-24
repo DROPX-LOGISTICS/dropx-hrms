@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireHrmsAuth } from "@/lib/auth";
 import { syncEmployeeBiometricEnrolment } from "@/lib/biometric";
+import { parseEmployeeSalaryValues } from "@/lib/employee-salary-validation";
 import { employeeDesignationsForLocation, isEmployeeDesignation } from "@/lib/employee-options";
 import { generateEmployeeBiometricId, generateEmployeeCode } from "@/lib/id-generation";
 import { replaceEmployeeProfileDocument, uploadEmployeeProfileDocument } from "@/lib/profile-document-storage";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseEmployeeForm } from "@/lib/validation";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function updateEmployee(formData: FormData) {
   const auth = await requireHrmsAuth("people.manage");
@@ -133,4 +136,73 @@ export async function updateEmployee(formData: FormData) {
   revalidatePath("/people");
   revalidatePath(`/people/${employeeId}`);
   redirect(`/people/${employeeId}?notice=Employee%20updated`);
+}
+
+export async function saveEmployeeSalaryConfiguration(formData: FormData) {
+  const auth = await requireHrmsAuth("people.manage");
+  const employeeId = String(formData.get("employee_id") ?? "").trim();
+  const configurationId = String(formData.get("configuration_id") ?? "").trim();
+  const effectiveFrom = String(formData.get("effective_from") ?? "").trim();
+  const editPath = `/people/${employeeId}?edit=1`;
+  if (!UUID_PATTERN.test(employeeId)) redirect("/people?error=Select%20a%20valid%20employee");
+  if (!UUID_PATTERN.test(configurationId)) redirect(`${editPath}&error=Select%20a%20valid%20salary%20configuration`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom) || Number.isNaN(Date.parse(`${effectiveFrom}T00:00:00Z`))) {
+    redirect(`${editPath}&error=Select%20a%20valid%20salary%20effective%20date`);
+  }
+  if (!supabaseAdmin) redirect(`${editPath}&error=Database%20configuration%20is%20missing`);
+
+  const [{ data: employee, error: employeeError }, { data: configuration, error: configurationError }] = await Promise.all([
+    supabaseAdmin
+      .from("employees")
+      .select("id, location_id")
+      .eq("company_id", auth.companyId)
+      .eq("id", employeeId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("hr_salary_configurations")
+      .select("id, hr_salary_configuration_items(payroll_head_id, calculation_type, minimum_value, maximum_value, is_enabled, hr_payroll_heads(name))")
+      .eq("company_id", auth.companyId)
+      .eq("id", configurationId)
+      .eq("is_active", true)
+      .maybeSingle()
+  ]);
+  if (employeeError || !employee || (!auth.allLocations && !auth.locationIds.includes(employee.location_id ?? ""))) {
+    redirect("/people?error=Employee%20was%20not%20found");
+  }
+  if (configurationError || !configuration) {
+    redirect(`${editPath}&error=Salary%20configuration%20is%20inactive%20or%20was%20not%20found`);
+  }
+
+  const relation = <T,>(value: T | T[] | null | undefined) => Array.isArray(value) ? value[0] ?? null : value ?? null;
+  const inputItems = (configuration.hr_salary_configuration_items ?? [])
+    .filter((item) => item.is_enabled && item.calculation_type === "input")
+    .map((item) => ({
+      payrollHeadId: item.payroll_head_id,
+      payrollHeadName: relation(item.hr_payroll_heads)?.name ?? "Payroll head",
+      minimumValue: item.minimum_value === null ? null : Number(item.minimum_value),
+      maximumValue: item.maximum_value === null ? null : Number(item.maximum_value)
+    }));
+  let values: Record<string, number>;
+  try {
+    values = parseEmployeeSalaryValues(
+      formData.getAll("salary_value_head_id").map(String),
+      formData.getAll("salary_value_amount").map(String),
+      inputItems
+    );
+  } catch (error) {
+    redirect(`${editPath}&error=${encodeURIComponent(error instanceof Error ? error.message : "Enter valid employee salary values")}`);
+  }
+
+  const { error } = await supabaseAdmin.rpc("hr_save_employee_salary_assignment", {
+    p_company_id: auth.companyId,
+    p_employee_id: employeeId,
+    p_configuration_id: configurationId,
+    p_effective_from: effectiveFrom,
+    p_values: values,
+    p_actor_user_id: auth.userId
+  });
+  if (error) redirect(`${editPath}&error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath(`/people/${employeeId}`);
+  redirect(`${editPath}&notice=Salary%20configuration%20saved`);
 }

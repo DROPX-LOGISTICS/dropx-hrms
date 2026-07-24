@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { EmployeeAvatar } from "@/components/employee-avatar";
 import { EmployeeEditForm } from "@/components/employee-edit-form";
+import { EmployeeSalaryConfigurationForm } from "@/components/employee-salary-configuration-form";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { requireHrmsAuth } from "@/lib/auth";
 import { getEmployee, listDesignations, listLocations } from "@/lib/data";
+import { loadEmployeeSalarySettings } from "@/lib/employee-salary";
 import { can } from "@/lib/permissions";
-import { updateEmployee } from "./actions";
+import { saveEmployeeSalaryConfiguration, updateEmployee } from "./actions";
 
 export const metadata: Metadata = { title: "Employee profile" };
 export const dynamic = "force-dynamic";
@@ -31,10 +33,11 @@ export default async function EmployeePage({ params, searchParams }: { params: {
   const auth = await requireHrmsAuth("people.view");
   const manage = can(auth.permissions, "people.manage");
   const editing = searchParams?.edit === "1" && manage;
-  const [employee, locations, designations] = await Promise.all([
+  const [employee, locations, designations, salarySettings] = await Promise.all([
     getEmployee(auth, params.id),
     editing ? listLocations(auth) : Promise.resolve([]),
-    editing ? listDesignations(auth) : Promise.resolve([])
+    editing ? listDesignations(auth) : Promise.resolve([]),
+    editing ? loadEmployeeSalarySettings(auth, params.id) : Promise.resolve(null)
   ]);
   if (!employee) notFound();
 
@@ -43,6 +46,16 @@ export default async function EmployeePage({ params, searchParams }: { params: {
     {searchParams?.error ? <div className="alert error" role="alert">{searchParams.error}</div> : null}
     {searchParams?.notice ? <div className="alert success" role="status">{searchParams.notice}</div> : null}
     {editing ? <section className="panel employee-form-panel"><div className="panel-head"><div><h2>Edit employee</h2><p className="panel-subtitle">Maintain the complete employee profile. IDs remain controlled by the Dashboard generation master.</p></div><Link className="button secondary small" href={`/people/${employee.id}`}>Close</Link></div><div className="panel-body"><EmployeeEditForm action={updateEmployee} employee={employee} locations={locations} designations={designations} /></div></section> : null}
+    {editing && salarySettings ? <section className="panel employee-form-panel employee-salary-panel">
+      <div className="panel-head"><div><h2>Salary settings</h2><p className="panel-subtitle">Configuration assignment and employee-specific payroll values.</p></div></div>
+      <div className="panel-body"><EmployeeSalaryConfigurationForm
+        action={saveEmployeeSalaryConfiguration}
+        assignment={salarySettings.assignment}
+        configurations={salarySettings.configurations}
+        employeeDateOfJoin={employee.date_of_join}
+        employeeId={employee.id}
+      /></div>
+    </section> : null}
     <section className="panel employee-avatar-card">
       <EmployeeAvatar fullName={employee.full_name} photoUrl={employee.profile_photo_url} size="large" />
       <div className="employee-avatar-card-copy"><p className="eyebrow">Employee profile</p><h2>{employee.full_name}</h2><p>{employee.employee_code ?? "No employee ID"} · {employee.designations?.name ?? "Designation not assigned"}</p><div className="employee-avatar-card-status"><StatusPill value={employee.profile_completion_status ?? "pending"} /><StatusPill value={employee.is_active ? "active" : "inactive"} /></div></div>

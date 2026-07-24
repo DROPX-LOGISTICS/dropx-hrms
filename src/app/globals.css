@@ -270,6 +270,22 @@ tbody tr:hover { background: #fbfcfb; }
 .salary-definition-actions { min-width: 920px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; }
 .salary-definition-actions p { margin: 0; color: var(--muted); font-size: 10.5px; }
 .salary-definition-actions code { color: #9d3e12; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.employee-salary-panel { border-top: 2px solid var(--brand-orange); }
+.employee-salary-form { display: grid; gap: 14px; }
+.salary-assignment-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.salary-assignment-heading h3 { margin: 0; font-size: 14px; }
+.salary-assignment-heading p { margin: 3px 0 0; color: var(--muted); font-size: 10.5px; }
+.employee-salary-fields { grid-template-columns: minmax(220px, 1.4fr) minmax(180px, .8fr); max-width: 760px; }
+.employee-salary-table-wrap { border: 1px solid var(--line); border-radius: 8px; }
+.employee-salary-table { min-width: 760px; table-layout: fixed; }
+.employee-salary-table th:nth-child(1) { width: 27%; }
+.employee-salary-table th:nth-child(2) { width: 20%; }
+.employee-salary-table th:nth-child(3) { width: 28%; }
+.employee-salary-table th:nth-child(4) { width: 25%; }
+.money-input { display: flex; align-items: stretch; }
+.money-input > span { display: grid; place-items: center; min-width: 32px; border: 1px solid #d2d7d3; border-right: 0; border-radius: 7px 0 0 7px; background: #f6f7f8; color: var(--muted); font-weight: 800; }
+.money-input input { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid #d2d7d3; border-radius: 0 7px 7px 0; font-size: 11.5px; }
+.money-input input:focus { outline: 2px solid #fff0e5; border-color: var(--brand-dark); }
 .icon-button { display: inline-grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: #555; background: #fff; }
 .icon-button.danger { color: var(--red); border-color: #f0c7c2; background: #fff4f2; }
 .salary-config-meta { min-width: 850px; margin-bottom: 16px; }
