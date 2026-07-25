@@ -314,7 +314,13 @@ function SalaryConfigurationActionsMenu({
   function toggleMenu() {
     if (open) return setOpen(false);
     const bounds = rootRef.current?.getBoundingClientRect();
-    if (bounds) setPosition({ top: bounds.bottom + 5, right: window.innerWidth - bounds.right });
+    if (bounds) {
+      const menuHeight = 82;
+      const top = bounds.bottom + menuHeight + 8 <= window.innerHeight
+        ? bounds.bottom + 5
+        : Math.max(8, bounds.top - menuHeight - 5);
+      setPosition({ top, right: window.innerWidth - bounds.right });
+    }
     setOpen(true);
   }
 
