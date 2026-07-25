@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarCheck2, CalendarDays, CircleDollarSign, DoorOpen, ListTree } from "lucide-react";
+import { CalendarCheck2, CalendarDays, CircleDollarSign, DoorOpen, ListTree, UserCog } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { requireHrmsAuth } from "@/lib/auth";
@@ -14,6 +14,7 @@ export default async function SettingsPage() {
     <PageHeader eyebrow="Administration" title="Settings" description="Manage attendance, leave, payroll and exit policy masters." />
 
     <section className="settings-directory">
+      <Link className="settings-card" href="/settings/access"><UserCog size={20} /><span><strong>Users & Access</strong><small>Manage access to the People frontend only.</small></span></Link>
       <Link className="settings-card" href="/settings/attendance-policy"><CalendarCheck2 size={20} /><span><strong>Attendance Policy</strong><small>Configure working days and attendance thresholds.</small></span></Link>
       <Link className="settings-card" href="/settings/payroll-heads"><ListTree size={20} /><span><strong>Payroll Heads</strong><small>Create earning, deduction and statutory payroll heads.</small></span></Link>
       <Link className="settings-card" href="/settings/leave-policy"><CalendarDays size={20} /><span><strong>Leave Policy</strong><small>Configure the leave year and leave types.</small></span></Link>

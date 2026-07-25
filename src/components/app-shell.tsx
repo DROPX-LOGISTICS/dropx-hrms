@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, CalendarCheck2, CalendarDays, CheckSquare2, CircleDollarSign, DoorOpen, ListTree, Settings2, Users2 } from "lucide-react";
+import { BarChart3, CalendarCheck2, CalendarDays, CheckSquare2, CircleDollarSign, DoorOpen, ListTree, Settings2, UserCog, Users2 } from "lucide-react";
 import { HrmsAuthContext } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { signOut } from "@/app/login/actions";
@@ -16,6 +16,7 @@ const mainNav = [
 ];
 
 const settingsNav = [
+  { href: "/settings/access", label: "Users & Access", icon: UserCog },
   { href: "/settings/attendance-policy", label: "Attendance Policy", icon: CalendarCheck2 },
   { href: "/settings/payroll-heads", label: "Payroll Heads", icon: ListTree },
   { href: "/settings/leave-policy", label: "Leave Policy", icon: CalendarDays },

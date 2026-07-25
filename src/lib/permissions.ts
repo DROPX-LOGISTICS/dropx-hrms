@@ -14,6 +14,16 @@ export const hrmsPermissions = [
 
 export type HrmsPermission = (typeof hrmsPermissions)[number];
 
+export const hrmsRoles = [
+  { code: "HRMS_ADMIN", name: "HRMS Admin" },
+  { code: "HR_MANAGER", name: "HR Manager" },
+  { code: "MANAGER", name: "Manager" },
+  { code: "EMPLOYEE", name: "Employee" },
+  { code: "VIEWER", name: "Viewer" }
+] as const;
+
+export type HrmsRoleCode = (typeof hrmsRoles)[number]["code"];
+
 const rolePermissions: Record<string, readonly HrmsPermission[]> = {
   OWNER: hrmsPermissions,
   HRMS_ADMIN: hrmsPermissions,
