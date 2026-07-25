@@ -6,6 +6,45 @@ export type PayrollValueDefinition =
   | { calculationType: "formula"; valueExpression: string; formula: string; fixedAmount: null };
 
 const CONSTANT_PATTERN = /^(?:\d+(?:\.\d*)?|\.\d+)$/;
+const PERCENTAGE_PATTERN = /^\s*(?:\[([A-Za-z][A-Za-z0-9_]*)\]|([A-Za-z][A-Za-z0-9_]*))\s*\*\s*((?:\d+(?:\.\d*)?|\.\d+))\s*%\s*$/;
+
+export type PayrollValueMethod = "input" | "fixed" | "percentage" | "advanced";
+
+export type PayrollValueMethodState = {
+  method: PayrollValueMethod;
+  fixedValue: string;
+  percentageBaseCode: string;
+  percentage: string;
+  advancedFormula: string;
+};
+
+export function payrollValueMethodState(rawValue: string): PayrollValueMethodState {
+  const value = rawValue.trim();
+  if (!value) return { method: "input", fixedValue: "", percentageBaseCode: "", percentage: "", advancedFormula: "" };
+  if (CONSTANT_PATTERN.test(value)) {
+    return { method: "fixed", fixedValue: value, percentageBaseCode: "", percentage: "", advancedFormula: "" };
+  }
+  const percentage = value.match(PERCENTAGE_PATTERN);
+  if (percentage) {
+    return {
+      method: "percentage",
+      fixedValue: "",
+      percentageBaseCode: (percentage[1] ?? percentage[2]).toUpperCase(),
+      percentage: percentage[3],
+      advancedFormula: ""
+    };
+  }
+  return { method: "advanced", fixedValue: "", percentageBaseCode: "", percentage: "", advancedFormula: value };
+}
+
+export function buildPayrollValueExpression(state: PayrollValueMethodState) {
+  if (state.method === "input") return "";
+  if (state.method === "fixed") return state.fixedValue.trim();
+  if (state.method === "advanced") return state.advancedFormula.trim();
+  const code = state.percentageBaseCode.trim().toUpperCase();
+  const percentage = state.percentage.trim();
+  return code && percentage ? `${code} * ${percentage}%` : "";
+}
 
 export function parsePayrollValueExpression(rawValue: string): PayrollValueDefinition {
   const valueExpression = rawValue.trim();
