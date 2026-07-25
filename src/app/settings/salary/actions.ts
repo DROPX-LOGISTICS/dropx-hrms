@@ -190,6 +190,10 @@ export async function saveSalaryConfiguration(formData: FormData) {
       .maybeSingle();
     if (configurationResult.error) throw new Error(configurationResult.error.message);
     if (!configurationResult.data) throw new Error("Salary configuration was not found.");
+    const configurationName = value(formData, "configuration_name") || configurationResult.data.name;
+    if (configurationName.length < 2 || configurationName.length > 80) {
+      throw new Error("Configuration name must contain 2–80 characters.");
+    }
 
     const salaryRows = await buildSalaryRows(auth.companyId, formData);
     const rows = salaryRows.map((row) => ({ ...row, configuration_id: configurationId }));
@@ -219,8 +223,18 @@ export async function saveSalaryConfiguration(formData: FormData) {
       if (deleteResult.error) throw new Error(deleteResult.error.message);
     }
 
+    if (configurationName !== configurationResult.data.name) {
+      const updateResult = await db()
+        .from("hr_salary_configurations")
+        .update({ name: configurationName })
+        .eq("company_id", auth.companyId)
+        .eq("id", configurationId);
+      if (updateResult.error) throw new Error(updateResult.error.message);
+    }
+
     await audit(auth.companyId, auth.userId, configurationId, "update", {
       ...configurationResult.data,
+      name: configurationName,
       items: rows
     });
   } catch (error) {

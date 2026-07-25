@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import {
   CreateSalaryConfigurationEditor,
-  SalaryConfigurationEditor
+  SalaryConfigurationList
 } from "@/components/salary-configuration-editor";
 import { requireHrmsAuth } from "@/lib/auth";
 import { loadPayrollSettings } from "@/lib/payroll";
@@ -34,30 +34,25 @@ export default async function SalarySettingsPage({ searchParams }: { searchParam
       <article className="card stat"><span className="stat-label">Calculation methods</span><strong className="stat-value text-value">4</strong><span className="stat-meta">Input, fixed, percentage or advanced</span></article>
     </section>
 
-    <section className="panel">
-      <div className="panel-head">
+    <section className="salary-create-workspace">
+      <div className="salary-create-workspace-head">
         <div>
           <h2>Create salary configuration</h2>
           <p className="panel-subtitle">Enter the details, add every salary component and save the complete configuration in one step.</p>
         </div>
       </div>
-      <div className="panel-body">
-        <CreateSalaryConfigurationEditor heads={activeHeads} />
-      </div>
+      <CreateSalaryConfigurationEditor heads={activeHeads} />
     </section>
 
-    <section className="master-section">
-      <div className="section-heading">
+    <section className="panel salary-configuration-master">
+      <div className="panel-head">
         <div>
-          <p className="eyebrow">Configuration master</p>
           <h2>Saved salary configurations</h2>
-          <p>Review or update components using guided calculation methods.</p>
+          <p className="panel-subtitle">Open any configuration from the action menu to view or edit it.</p>
         </div>
       </div>
-      <div className="salary-config-list">
-        {configurations.length
-          ? configurations.map((configuration) => <SalaryConfigurationEditor key={configuration.id} configuration={configuration} heads={heads} />)
-          : <div className="alert">No salary configuration exists. Create the first complete configuration above.</div>}
+      <div className="panel-body salary-configuration-master-body">
+        <SalaryConfigurationList configurations={configurations} heads={heads} />
       </div>
     </section>
   </AppShell>;

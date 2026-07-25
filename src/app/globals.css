@@ -141,8 +141,8 @@ tbody tr:hover { background: #fbfcfb; }
 .row-actions-trigger { display: grid; place-items: center; width: 29px; height: 29px; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: #555; background: #fff; }
 .row-actions-trigger:hover, .row-actions-trigger[aria-expanded="true"] { color: var(--brand-red); border-color: #efb7bf; background: #fff4f2; }
 .row-actions-popover { position: fixed; z-index: 80; display: grid; min-width: 132px; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: 0 12px 28px rgba(24, 24, 27, .16); }
-.row-actions-popover a { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 700; }
-.row-actions-popover a:hover { color: var(--brand-red); background: #fff3ed; }
+.row-actions-popover a, .row-actions-popover button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 9px; border: 0; border-radius: 6px; color: inherit; background: transparent; text-align: left; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.row-actions-popover a:hover, .row-actions-popover button:hover { color: var(--brand-red); background: #fff3ed; }
 .employee-form-panel { margin-bottom: 14px; }
 .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
 .settings-directory { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -252,6 +252,25 @@ tbody tr:hover { background: #fbfcfb; }
 .system-badge, .locked-label, .method-label { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 8px; border-radius: 6px; color: #785000; background: #fff7df; font-size: 10.5px; font-weight: 800; }
 .locked-label { color: var(--muted); background: #f4f5f6; }
 .salary-config-details { grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.4fr); margin-bottom: 18px; }
+.salary-create-workspace { margin-top: 18px; padding: 21px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.salary-create-workspace-head { margin-bottom: 18px; }
+.salary-create-workspace-head h2 { margin: 0; font-size: 19px; }
+.salary-create-form { min-width: 0; }
+.salary-create-workspace .salary-component-table-wrap { overflow: visible; }
+.salary-create-workspace .salary-definition-table { width: 100%; min-width: 0; }
+.salary-configuration-master { margin-top: 22px; }
+.salary-configuration-master-body { padding: 0; }
+.salary-configuration-list-wrap { border-radius: 0 0 10px 10px; }
+.salary-configuration-list-table { min-width: 720px; }
+.salary-configuration-list-table th:nth-child(1) { width: 32%; }
+.salary-configuration-list-table th:nth-child(2) { width: 18%; }
+.salary-configuration-list-table th:nth-child(3) { width: 17%; }
+.salary-configuration-list-table th:nth-child(4) { width: 12%; }
+.salary-configuration-list-table th:nth-child(5) { width: 12%; }
+.salary-configuration-list-table th:nth-child(6) { width: 9%; text-align: center; }
+.salary-configuration-list-table td:last-child { text-align: center; }
+.salary-configuration-list-table code { display: inline-flex; padding: 3px 6px; border-radius: 5px; background: #fff7ef; }
+.muted-table-value { color: var(--muted); }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 24px 0 12px; }
 .section-heading h2 { margin: 0; font-size: 19px; }
 .section-heading p:not(.eyebrow) { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
@@ -296,6 +315,18 @@ tbody tr:hover { background: #fbfcfb; }
 .salary-definition-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; }
 .salary-definition-actions p { margin: 0; color: var(--muted); font-size: 10.5px; }
 .salary-definition-actions code { color: #9d3e12; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.salary-config-modal-backdrop { padding: 16px; }
+.salary-config-modal { display: flex; flex-direction: column; width: min(1380px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: hidden; border-radius: 12px; border-top: 3px solid var(--brand-dark); background: #fff; box-shadow: 0 24px 70px rgba(24, 24, 27, .28); }
+.salary-config-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 17px 20px; border-bottom: 1px solid var(--line); background: #fffdfb; }
+.salary-config-modal-head h2 { margin: 2px 0 0; font-size: 19px; }
+.salary-config-modal-head p:not(.eyebrow) { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
+.modal-close-button { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; padding: 0; border: 1px solid var(--line); border-radius: 7px; color: #555; background: #fff; cursor: pointer; }
+.modal-close-button:hover { color: var(--brand-red); border-color: #efb7bf; background: #fff4f2; }
+.salary-config-modal > form { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.salary-config-modal-body { min-height: 0; flex: 1; overflow: auto; padding: 18px 20px; }
+.salary-config-modal-details { max-width: 780px; }
+.salary-config-modal .salary-definition-table { min-width: 1080px; }
+.salary-config-modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); background: #fafafa; }
 .employee-salary-panel { border-top: 2px solid var(--brand-orange); }
 .employee-salary-form { display: grid; gap: 14px; }
 .salary-assignment-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -337,5 +368,5 @@ tbody tr:hover { background: #fbfcfb; }
 .template-editor { min-height: 190px !important; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.55; }
 .recipient-grid { display: flex; gap: 10px 18px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
 @media (max-width: 1050px) { .stats-grid, .settings-directory { grid-template-columns: repeat(2, 1fr); } .two-column { grid-template-columns: 1fr; } }
-@media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .salary-config-details { grid-template-columns: repeat(2, minmax(0, 1fr)); } .payroll-head-create, .payroll-head-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .salary-config-details, .settlement-entry, .inline-form.exit-update, .generated-id-summary, .access-row-form, .owner-access-row { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form, .salary-definition-actions { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } }
+@media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .salary-config-details { grid-template-columns: repeat(2, minmax(0, 1fr)); } .salary-create-workspace .salary-component-table-wrap { overflow-x: auto; } .salary-create-workspace .salary-definition-table { min-width: 1040px; } .payroll-head-create, .payroll-head-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .salary-config-details, .settlement-entry, .inline-form.exit-update, .generated-id-summary, .access-row-form, .owner-access-row { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form, .salary-definition-actions { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } .salary-config-modal-backdrop { padding: 6px; } .salary-config-modal { width: calc(100vw - 12px); max-height: calc(100vh - 12px); } .salary-config-modal-head, .salary-config-modal-body { padding-left: 13px; padding-right: 13px; } .salary-config-modal-actions { padding: 10px 13px; } }
