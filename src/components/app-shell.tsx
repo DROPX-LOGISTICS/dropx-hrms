@@ -16,6 +16,7 @@ const mainNav = [
 ];
 
 const settingsNav = [
+  { href: "/settings/attendance-policy", label: "Attendance Policy", icon: CalendarCheck2 },
   { href: "/settings/payroll-heads", label: "Payroll Heads", icon: ListTree },
   { href: "/settings/leave-policy", label: "Leave Policy", icon: CalendarDays },
   { href: "/settings/salary", label: "Salary Configuration", icon: CircleDollarSign },

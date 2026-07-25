@@ -139,7 +139,7 @@ tbody tr:hover { background: #fbfcfb; }
 .row-actions-popover a:hover { color: var(--brand-red); background: #fff3ed; }
 .employee-form-panel { margin-bottom: 14px; }
 .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
-.settings-directory { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.settings-directory { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .settings-card { display: flex; align-items: flex-start; gap: 11px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: var(--shadow); transition: border-color .15s ease, transform .15s ease; }
 .settings-card:hover { border-color: #efc5a8; transform: translateY(-1px); }
 .settings-card > svg { flex: 0 0 auto; margin-top: 1px; color: var(--brand-red); }
@@ -233,8 +233,16 @@ tbody tr:hover { background: #fbfcfb; }
 .master-accordion form { padding: 14px; border-top: 1px solid var(--line); }
 .payroll-stats .text-value { max-width: 100%; overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
 .payroll-head-create, .payroll-head-edit { grid-template-columns: 1.2fr 1fr 1.15fr auto; }
-.payroll-head-editors { border-top: 1px solid var(--line); }
-.payroll-head-editors > h3 { margin: 0 0 11px; font-size: 13px; }
+.payroll-head-create { align-items: start; }
+.payroll-head-create > .button { margin-top: 22px; white-space: nowrap; }
+.payroll-head-details { border-top: 1px solid var(--line); scroll-margin-top: 18px; }
+.payroll-head-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.payroll-head-detail-heading h3 { margin: 3px 0 0; font-size: 16px; }
+.payroll-head-detail-heading p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+.payroll-head-status-form { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 13px 14px; border: 1px solid #f0c7c2; border-radius: 9px; background: #fff8f6; }
+.payroll-head-status-form strong { display: block; font-size: 12px; }
+.payroll-head-status-form p { margin: 4px 0 0; color: var(--muted); font-size: 10.5px; }
+.payroll-head-view { margin: 0; }
 .system-badge, .locked-label, .method-label { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 8px; border-radius: 6px; color: #785000; background: #fff7df; font-size: 10.5px; font-weight: 800; }
 .locked-label { color: var(--muted); background: #f4f5f6; }
 .salary-config-create { grid-template-columns: 1fr 1.4fr auto; }
@@ -311,5 +319,5 @@ tbody tr:hover { background: #fbfcfb; }
 .template-editor { min-height: 190px !important; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.55; }
 .recipient-grid { display: flex; gap: 10px 18px; flex-wrap: wrap; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
 @media (max-width: 1050px) { .stats-grid, .settings-directory { grid-template-columns: repeat(2, 1fr); } .two-column { grid-template-columns: 1fr; } }
-@media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .settlement-entry, .inline-form.exit-update, .generated-id-summary { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .payroll-head-create, .payroll-head-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .settlement-entry, .inline-form.exit-update, .generated-id-summary { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } }
