@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireHrmsAuth } from "@/lib/auth";
 import { syncEmployeeBiometricEnrolment } from "@/lib/biometric";
+import { EmployeeSalaryHead } from "@/lib/employee-salary-calculator";
 import { parseEmployeeSalaryValues } from "@/lib/employee-salary-validation";
 import { employeeDesignationsForLocation, isEmployeeDesignation } from "@/lib/employee-options";
 import { generateEmployeeBiometricId, generateEmployeeCode } from "@/lib/id-generation";
@@ -160,7 +161,7 @@ export async function saveEmployeeSalaryConfiguration(formData: FormData) {
       .maybeSingle(),
     supabaseAdmin
       .from("hr_salary_configurations")
-      .select("id, hr_salary_configuration_items(payroll_head_id, calculation_type, minimum_value, maximum_value, is_enabled, hr_payroll_heads(name))")
+      .select("id, hr_salary_configuration_items(payroll_head_id, calculation_type, formula, fixed_amount, value_expression, minimum_value, maximum_value, is_enabled, hr_payroll_heads(code, name, head_type))")
       .eq("company_id", auth.companyId)
       .eq("id", configurationId)
       .eq("is_active", true)
@@ -174,20 +175,25 @@ export async function saveEmployeeSalaryConfiguration(formData: FormData) {
   }
 
   const relation = <T,>(value: T | T[] | null | undefined) => Array.isArray(value) ? value[0] ?? null : value ?? null;
-  const inputItems = (configuration.hr_salary_configuration_items ?? [])
-    .filter((item) => item.is_enabled && item.calculation_type === "input")
+  const salaryHeads = (configuration.hr_salary_configuration_items ?? [])
+    .filter((item) => item.is_enabled && relation(item.hr_payroll_heads))
     .map((item) => ({
       payrollHeadId: item.payroll_head_id,
       payrollHeadName: relation(item.hr_payroll_heads)?.name ?? "Payroll head",
+      payrollHeadCode: relation(item.hr_payroll_heads)?.code ?? "",
+      headType: relation(item.hr_payroll_heads)?.head_type ?? "employee_earning",
+      calculationType: item.calculation_type,
+      formula: item.value_expression ?? item.formula,
+      fixedAmount: item.fixed_amount === null ? null : Number(item.fixed_amount),
       minimumValue: item.minimum_value === null ? null : Number(item.minimum_value),
       maximumValue: item.maximum_value === null ? null : Number(item.maximum_value)
-    }));
+    })) as EmployeeSalaryHead[];
   let values: Record<string, number>;
   try {
     values = parseEmployeeSalaryValues(
       formData.getAll("salary_value_head_id").map(String),
       formData.getAll("salary_value_amount").map(String),
-      inputItems
+      salaryHeads
     );
   } catch (error) {
     redirect(`${editPath}&error=${encodeURIComponent(error instanceof Error ? error.message : "Enter valid employee salary values")}`);
