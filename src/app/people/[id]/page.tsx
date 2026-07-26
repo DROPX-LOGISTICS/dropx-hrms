@@ -3,8 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { EmployeeAvatar } from "@/components/employee-avatar";
-import { EmployeeEditForm } from "@/components/employee-edit-form";
-import { EmployeeSalaryConfigurationForm } from "@/components/employee-salary-configuration-form";
+import { EmployeeEditWorkspace } from "@/components/employee-edit-workspace";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { requireHrmsAuth } from "@/lib/auth";
@@ -29,7 +28,7 @@ function statutoryLabel(values: string[] | null | undefined) {
   return (values?.length ? values : ["not_applicable"]).map((value) => labels[value] ?? value).join(", ");
 }
 
-export default async function EmployeePage({ params, searchParams }: { params: { id: string }; searchParams?: { edit?: string; error?: string; notice?: string } }) {
+export default async function EmployeePage({ params, searchParams }: { params: { id: string }; searchParams?: { edit?: string; section?: string; error?: string; notice?: string } }) {
   const auth = await requireHrmsAuth("people.view");
   const manage = can(auth.permissions, "people.manage");
   const editing = searchParams?.edit === "1" && manage;
@@ -45,16 +44,23 @@ export default async function EmployeePage({ params, searchParams }: { params: {
     <PageHeader eyebrow="Employee profile" title={employee.full_name} description={employee.employee_code ?? "Employee record"} action={<div className="toolbar">{manage && !editing ? <Link className="button primary" href={`/people/${employee.id}?edit=1`}>Edit employee</Link> : null}<Link className="button secondary" href="/people">Back to people</Link></div>} />
     {searchParams?.error ? <div className="alert error" role="alert">{searchParams.error}</div> : null}
     {searchParams?.notice ? <div className="alert success" role="status">{searchParams.notice}</div> : null}
-    {editing ? <section className="panel employee-form-panel"><div className="panel-head"><div><h2>Edit employee</h2><p className="panel-subtitle">Maintain the complete employee profile. IDs remain controlled by the Dashboard generation master.</p></div><Link className="button secondary small" href={`/people/${employee.id}`}>Close</Link></div><div className="panel-body"><EmployeeEditForm action={updateEmployee} employee={employee} locations={locations} designations={designations} /></div></section> : null}
-    {editing && salarySettings ? <section className="panel employee-form-panel employee-salary-panel">
-      <div className="panel-head"><div><h2>Salary settings</h2><p className="panel-subtitle">Configuration assignment and employee-specific payroll values.</p></div></div>
-      <div className="panel-body"><EmployeeSalaryConfigurationForm
-        action={saveEmployeeSalaryConfiguration}
-        assignment={salarySettings.assignment}
-        configurations={salarySettings.configurations}
-        employeeDateOfJoin={employee.date_of_join}
-        employeeId={employee.id}
-      /></div>
+    {editing && salarySettings ? <section className="panel employee-form-panel">
+      <div className="panel-head">
+        <div><h2>Edit employee</h2><p className="panel-subtitle">Maintain employee details and salary configuration from one workspace.</p></div>
+        <Link className="button secondary small" href={`/people/${employee.id}`}>Close</Link>
+      </div>
+      <div className="panel-body">
+        <EmployeeEditWorkspace
+          initialSection={searchParams?.section === "salary" ? "salary" : "details"}
+          employeeAction={updateEmployee}
+          employee={employee}
+          locations={locations}
+          designations={designations}
+          salaryAction={saveEmployeeSalaryConfiguration}
+          assignment={salarySettings.assignment}
+          configurations={salarySettings.configurations}
+        />
+      </div>
     </section> : null}
     <section className="panel employee-avatar-card">
       <EmployeeAvatar fullName={employee.full_name} photoUrl={employee.profile_photo_url} size="large" />

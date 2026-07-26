@@ -143,7 +143,7 @@ export async function saveEmployeeSalaryConfiguration(formData: FormData) {
   const employeeId = String(formData.get("employee_id") ?? "").trim();
   const configurationId = String(formData.get("configuration_id") ?? "").trim();
   const effectiveFrom = String(formData.get("effective_from") ?? "").trim();
-  const editPath = `/people/${employeeId}?edit=1`;
+  const editPath = `/people/${employeeId}?edit=1&section=salary`;
   if (!UUID_PATTERN.test(employeeId)) redirect("/people?error=Select%20a%20valid%20employee");
   if (!UUID_PATTERN.test(configurationId)) redirect(`${editPath}&error=Select%20a%20valid%20salary%20configuration`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveFrom) || Number.isNaN(Date.parse(`${effectiveFrom}T00:00:00Z`))) {
