@@ -27,13 +27,6 @@ export default async function SalarySettingsPage({ searchParams }: { searchParam
     {searchParams?.error ? <div className="alert error">{searchParams.error}</div> : null}
     {searchParams?.notice ? <div className="alert success">{searchParams.notice}</div> : null}
 
-    <section className="grid stats-grid">
-      <article className="card stat"><span className="stat-label">Configurations</span><strong className="stat-value">{configurations.length}</strong><span className="stat-meta">Reusable salary structures</span></article>
-      <article className="card stat"><span className="stat-label">Available payroll heads</span><strong className="stat-value">{activeHeads.length}</strong><span className="stat-meta">Including protected CTC</span></article>
-      <article className="card stat"><span className="stat-label">Custom payroll heads</span><strong className="stat-value">{activeHeads.filter((head) => !head.is_system).length}</strong><span className="stat-meta">Across four pay types</span></article>
-      <article className="card stat"><span className="stat-label">Calculation methods</span><strong className="stat-value text-value">4</strong><span className="stat-meta">Input, fixed, percentage or advanced</span></article>
-    </section>
-
     <section className="salary-create-workspace">
       <div className="salary-create-workspace-head">
         <div>
