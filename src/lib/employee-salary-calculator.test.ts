@@ -45,6 +45,39 @@ const heads: EmployeeSalaryHead[] = [
     fixedAmount: null,
     minimumValue: null,
     maximumValue: null
+  },
+  {
+    payrollHeadId: "55555555-5555-4555-8555-555555555555",
+    payrollHeadName: "Employee Recovery",
+    payrollHeadCode: "RECOVERY",
+    headType: "employee_deduction",
+    calculationType: "fixed",
+    formula: null,
+    fixedAmount: 500,
+    minimumValue: null,
+    maximumValue: null
+  },
+  {
+    payrollHeadId: "66666666-6666-4666-8666-666666666666",
+    payrollHeadName: "Provident Fund Contribution",
+    payrollHeadCode: "PF_CONTRIBUTION",
+    headType: "statutory_contribution",
+    calculationType: "fixed",
+    formula: null,
+    fixedAmount: 500,
+    minimumValue: null,
+    maximumValue: null
+  },
+  {
+    payrollHeadId: "77777777-7777-4777-8777-777777777777",
+    payrollHeadName: "Provident Fund Deduction",
+    payrollHeadCode: "PF_DEDUCTION",
+    headType: "statutory_deduction",
+    calculationType: "fixed",
+    formula: null,
+    fixedAmount: 500,
+    minimumValue: null,
+    maximumValue: null
   }
 ];
 
@@ -55,7 +88,10 @@ describe("employee salary calculator", () => {
       [heads[0].payrollHeadId]: 20000,
       [heads[1].payrollHeadId]: 12000,
       [heads[2].payrollHeadId]: 5000,
-      [heads[3].payrollHeadId]: 5000
+      [heads[3].payrollHeadId]: 5000,
+      [heads[4].payrollHeadId]: 500,
+      [heads[5].payrollHeadId]: 500,
+      [heads[6].payrollHeadId]: 500
     });
     expect(result.adjustments).toMatchObject([{
       payrollHeadName: "Basic Salary",
@@ -65,8 +101,8 @@ describe("employee salary calculator", () => {
     }]);
     expect(result.reconciliation).toMatchObject({
       ctc: 20000,
-      componentTotal: 22000,
-      difference: 2000,
+      componentTotal: 23500,
+      difference: 3500,
       isBalanced: false
     });
   });
@@ -75,8 +111,11 @@ describe("employee salary calculator", () => {
     const result = reconcileEmployeeSalary(heads, {
       [heads[0].payrollHeadId]: 20000,
       [heads[1].payrollHeadId]: 12000,
-      [heads[2].payrollHeadId]: 4000,
-      [heads[3].payrollHeadId]: 4000
+      [heads[2].payrollHeadId]: 3000,
+      [heads[3].payrollHeadId]: 3500,
+      [heads[4].payrollHeadId]: 500,
+      [heads[5].payrollHeadId]: 500,
+      [heads[6].payrollHeadId]: 500
     });
     expect(result.isBalanced).toBe(true);
   });

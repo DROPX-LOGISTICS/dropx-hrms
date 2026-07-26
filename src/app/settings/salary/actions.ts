@@ -14,6 +14,13 @@ import type { PayrollHeadRow } from "@/lib/payroll";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const VALUE_METHODS: PayrollValueMethod[] = ["input", "fixed", "percentage", "advanced"];
+const PAYROLL_TYPE_LABELS: Record<PayrollHeadRow["head_type"], string> = {
+  ctc: "CTC",
+  employee_earning: "Employee Earnings",
+  employee_deduction: "Employee Deductions",
+  statutory_contribution: "Statutory Contributions",
+  statutory_deduction: "Statutory Deductions"
+};
 
 function db() {
   if (!supabaseAdmin) throw new Error("Database configuration is missing.");
@@ -51,6 +58,7 @@ async function audit(companyId: string, userId: string, entityId: string, action
 
 async function buildSalaryRows(companyId: string, formData: FormData) {
   const payrollHeadIds = values(formData, "payroll_head_id");
+  const payrollHeadTypes = values(formData, "payroll_head_type");
   const methods = values(formData, "value_method");
   const valueExpressions = values(formData, "value_expression");
   const minimumValues = values(formData, "minimum_value");
@@ -58,7 +66,7 @@ async function buildSalaryRows(companyId: string, formData: FormData) {
 
   if (!payrollHeadIds.length || payrollHeadIds.some((id) => !id)) throw new Error("Select a payroll component for every row.");
   if (new Set(payrollHeadIds).size !== payrollHeadIds.length) throw new Error("A payroll component can be added only once.");
-  if ([methods, valueExpressions, minimumValues, maximumValues].some((items) => items.length !== payrollHeadIds.length)) {
+  if ([payrollHeadTypes, methods, valueExpressions, minimumValues, maximumValues].some((items) => items.length !== payrollHeadIds.length)) {
     throw new Error("One or more salary component rows are incomplete.");
   }
 
@@ -76,6 +84,9 @@ async function buildSalaryRows(companyId: string, formData: FormData) {
   const definitions = payrollHeadIds.map((headId, index) => {
     const head = headById.get(headId);
     if (!head || (!head.is_active && !head.is_system)) throw new Error(`${head?.name ?? "Payroll component"} is inactive.`);
+    if (payrollHeadTypes[index] !== head.head_type) {
+      throw new Error(`${head.name} must remain under ${PAYROLL_TYPE_LABELS[head.head_type]}.`);
+    }
 
     const method = methods[index] as PayrollValueMethod;
     if (!VALUE_METHODS.includes(method)) throw new Error(`Choose a valid calculation method for ${head.name}.`);

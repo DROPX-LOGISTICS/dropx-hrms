@@ -21,6 +21,14 @@ const typeLabel: Record<PayrollHeadType, string> = {
   statutory_contribution: "Statutory Contribution"
 };
 
+const salaryHeadGroups: Array<{ headType: PayrollHeadType; title: string }> = [
+  { headType: "ctc", title: "CTC" },
+  { headType: "employee_earning", title: "Employee Earnings" },
+  { headType: "employee_deduction", title: "Employee Deductions" },
+  { headType: "statutory_contribution", title: "Statutory Contributions" },
+  { headType: "statutory_deduction", title: "Statutory Deductions" }
+];
+
 type AmountPair = { monthly: string; yearly: string };
 
 function money(value: number) {
@@ -104,6 +112,12 @@ export function EmployeeSalaryConfigurationForm({
   const configuration = configurations.find((item) => item.id === configurationId);
   const annualisationFactor = Number(configuration?.annualisation_factor) || 12;
   const heads = useMemo(() => configurationHeads(configuration), [configuration]);
+  const groupedHeads = useMemo(() => salaryHeadGroups.flatMap((group) => {
+    const matchingHeads = heads.filter((head) => head.headType === group.headType);
+    return matchingHeads.length
+      ? [{ groupTitle: group.title, groupType: group.headType }, ...matchingHeads]
+      : [];
+  }), [heads]);
   const [effectiveFrom, setEffectiveFrom] = useState(
     assignment?.effective_from
       ?? latestDate(employeeDateOfJoin, configurations.find((item) => item.id === initialConfigurationId)?.effective_from)
@@ -265,7 +279,11 @@ export function EmployeeSalaryConfigurationForm({
       <div className="table-wrap employee-salary-table-wrap">
         <table className="employee-salary-table">
           <thead><tr><th>Payroll head</th><th>Pay type</th><th>Method and limits</th><th>Monthly value</th><th>Yearly value</th></tr></thead>
-          <tbody>{heads.length ? heads.map((head) => {
+          <tbody>{heads.length ? groupedHeads.map((entry) => {
+            if ("groupTitle" in entry) return <tr className="employee-salary-group-row" key={`group-${entry.groupType}`}>
+              <td colSpan={5}>{entry.groupTitle}</td>
+            </tr>;
+            const head = entry;
             const item = configuration.hr_salary_configuration_items.find((row) => row.payroll_head_id === head.payrollHeadId)!;
             const pair = amounts[head.payrollHeadId] ?? { monthly: "", yearly: "" };
             return <tr key={item.id}>

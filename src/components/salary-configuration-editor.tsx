@@ -16,6 +16,7 @@ import type { PayrollHeadRow, SalaryConfigurationRow } from "@/lib/payroll";
 
 type EditorRow = {
   key: string;
+  headType: PayrollHeadRow["head_type"];
   payrollHeadId: string;
   method: PayrollValueMethod;
   fixedValue: string;
@@ -40,6 +41,19 @@ const typeLabel: Record<PayrollHeadRow["head_type"], string> = {
   statutory_contribution: "Statutory Contribution"
 };
 
+type ComponentHeadType = Exclude<PayrollHeadRow["head_type"], "ctc">;
+
+const componentGroups: Array<{
+  headType: ComponentHeadType;
+  title: string;
+  description: string;
+}> = [
+  { headType: "employee_earning", title: "Employee Earnings", description: "Salary and allowance components paid to the employee." },
+  { headType: "employee_deduction", title: "Employee Deductions", description: "Company-defined amounts deducted from the employee." },
+  { headType: "statutory_contribution", title: "Statutory Contributions", description: "Employer statutory contributions included in CTC." },
+  { headType: "statutory_deduction", title: "Statutory Deductions", description: "Employee statutory deductions included in the salary structure." }
+];
+
 const methodOptions = [
   { value: "input", label: "Employee-specific amount" },
   { value: "fixed", label: "Fixed amount" },
@@ -51,6 +65,7 @@ function ctcRow(heads: PayrollHeadRow[], key = "protected-ctc"): EditorRow {
   const ctc = heads.find((head) => head.code === "CTC");
   return {
     key,
+    headType: "ctc",
     payrollHeadId: ctc?.id ?? "",
     method: "input",
     fixedValue: "",
@@ -62,9 +77,10 @@ function ctcRow(heads: PayrollHeadRow[], key = "protected-ctc"): EditorRow {
   };
 }
 
-function emptyRow(key: string, heads: PayrollHeadRow[]): EditorRow {
+function emptyRow(key: string, heads: PayrollHeadRow[], headType: ComponentHeadType): EditorRow {
   return {
     key,
+    headType,
     payrollHeadId: "",
     method: "percentage",
     fixedValue: "",
@@ -82,6 +98,7 @@ function initialRows(configuration: SalaryConfigurationRow, heads: PayrollHeadRo
     const methodState = payrollValueMethodState(expression);
     return {
       key: item.id,
+      headType: heads.find((head) => head.id === item.payroll_head_id)?.head_type ?? "employee_earning",
       payrollHeadId: item.payroll_head_id,
       ...methodState,
       minimumValue: item.minimum_value === null ? "" : String(item.minimum_value),
@@ -102,21 +119,32 @@ function expressionForRow(row: EditorRow) {
   });
 }
 
-function SalaryComponentRows({
+function SalaryComponentGroupRows({
+  allRows,
+  description,
+  headType,
   heads,
   idPrefix,
   rows,
   setRows,
+  title,
   readOnly = false
 }: {
+  allRows: EditorRow[];
+  description: string;
+  headType: PayrollHeadRow["head_type"];
   heads: PayrollHeadRow[];
   idPrefix: string;
   rows: EditorRow[];
   setRows: Dispatch<SetStateAction<EditorRow[]>>;
+  title: string;
   readOnly?: boolean;
 }) {
   const rowSequence = useRef(0);
   const selectedIds = new Set(rows.map((row) => row.payrollHeadId).filter(Boolean));
+  const canAdd = headType !== "ctc" && heads.some((head) =>
+    head.head_type === headType && head.is_active && !selectedIds.has(head.id)
+  );
 
   function updateRow(key: string, values: Partial<EditorRow>) {
     if (readOnly) return;
@@ -124,8 +152,9 @@ function SalaryComponentRows({
   }
 
   function addRow() {
+    if (headType === "ctc") return;
     rowSequence.current += 1;
-    setRows((current) => [...current, emptyRow(`new-${Date.now()}-${rowSequence.current}`, heads)]);
+    setRows((current) => [...current, emptyRow(`new-${Date.now()}-${rowSequence.current}`, heads, headType)]);
   }
 
   function removeRow(key: string) {
@@ -135,10 +164,10 @@ function SalaryComponentRows({
   return <>
     <div className="salary-definition-toolbar">
       <div>
-        <strong>Salary components</strong>
-        <p>{readOnly ? "Calculation rules and permitted values in this configuration." : "Add each component and choose how it is calculated."}</p>
+        <strong>{title}</strong>
+        <p>{description}</p>
       </div>
-      {!readOnly ? <button className="button secondary small" type="button" onClick={addRow}><Plus size={14} /> Add component</button> : null}
+      {!readOnly && headType !== "ctc" ? <button className="button secondary small" type="button" onClick={addRow} disabled={!canAdd}><Plus size={14} /> Add {typeLabel[headType].toLowerCase()}</button> : null}
     </div>
     <div className="table-wrap salary-component-table-wrap">
       <table className="salary-definition-table salary-builder-table">
@@ -151,20 +180,22 @@ function SalaryComponentRows({
           <th>Action</th>
         </tr></thead>
         <tbody>
-          {rows.map((row) => {
+          {rows.length ? rows.map((row) => {
             const selectedHead = heads.find((head) => head.id === row.payrollHeadId);
             const isCtc = selectedHead?.code === "CTC";
             const expression = expressionForRow(row);
             const headOptions = heads
+              .filter((head) => head.head_type === headType)
               .filter((head) => (head.is_active || head.id === row.payrollHeadId) && (!selectedIds.has(head.id) || head.id === row.payrollHeadId))
               .map((head) => ({ value: head.id, label: `${head.name} · ${head.code} · ${typeLabel[head.head_type]}${head.is_active ? "" : " · Inactive"}` }));
-            const selectedRowHeads = rows
+            const selectedRowHeads = allRows
               .map((candidate) => heads.find((head) => head.id === candidate.payrollHeadId))
               .filter((head): head is PayrollHeadRow => Boolean(head && head.id !== row.payrollHeadId));
             const baseOptions = selectedRowHeads.map((head) => ({ value: head.code, label: `${head.name} · ${head.code}` }));
 
             return <tr key={row.key}>
               <td data-label="Payroll component">
+                <input name="payroll_head_type" type="hidden" value={row.headType} />
                 <SearchableSelect
                   id={`${idPrefix}-payroll-head-${row.key}`}
                   name="payroll_head_id"
@@ -262,11 +293,56 @@ function SalaryComponentRows({
               <td data-label="Maximum">{isCtc ? <><input name="maximum_value" type="hidden" value="" /><span className="not-applicable-label">Not applicable</span></> : <input aria-label={`${selectedHead?.name ?? "Component"} maximum value`} name="maximum_value" type="number" min="0" step="0.01" value={row.maximumValue} disabled={readOnly} onChange={(event) => updateRow(row.key, { maximumValue: event.target.value })} placeholder="Optional" />}</td>
               <td data-label="Action">{isCtc ? <span className="locked-label">Protected</span> : readOnly ? <span className="not-applicable-label">—</span> : <button aria-label={`Remove ${selectedHead?.name ?? "component"} row`} className="icon-button danger" type="button" onClick={() => removeRow(row.key)}><Trash2 size={15} /></button>}</td>
             </tr>;
-          })}
+          }) : <tr><td className="empty-cell" colSpan={6}>No {title.toLowerCase()} added.</td></tr>}
         </tbody>
       </table>
     </div>
   </>;
+}
+
+function SalaryComponentRows({
+  heads,
+  idPrefix,
+  rows,
+  setRows,
+  readOnly = false
+}: {
+  heads: PayrollHeadRow[];
+  idPrefix: string;
+  rows: EditorRow[];
+  setRows: Dispatch<SetStateAction<EditorRow[]>>;
+  readOnly?: boolean;
+}) {
+  return <div className="salary-component-groups">
+    <section className="salary-component-group salary-component-group-ctc">
+      <SalaryComponentGroupRows
+        allRows={rows}
+        description="Protected Cost to Company entered as a monthly or yearly value on the employee profile."
+        headType="ctc"
+        heads={heads}
+        idPrefix={`${idPrefix}-ctc`}
+        rows={rows.filter((row) => row.headType === "ctc")}
+        setRows={setRows}
+        title="CTC"
+        readOnly={readOnly}
+      />
+    </section>
+    {componentGroups.map((group) => <section className="salary-component-group" key={group.headType}>
+      <SalaryComponentGroupRows
+        allRows={rows}
+        description={readOnly
+          ? group.description
+          : `${group.description} The dropdown shows only ${group.title.toLowerCase()} payroll heads.`}
+        headType={group.headType}
+        heads={heads}
+        idPrefix={`${idPrefix}-${group.headType}`}
+        rows={rows.filter((row) => row.headType === group.headType)}
+        setRows={setRows}
+        title={group.title}
+        readOnly={readOnly}
+      />
+    </section>)}
+  </div>;
 }
 
 export function CreateSalaryConfigurationEditor({ heads }: { heads: PayrollHeadRow[] }) {

@@ -55,7 +55,7 @@ export function reconcileEmployeeSalary(
   const ctc = roundMoney(Number(values[ctcHead.payrollHeadId]));
   if (!Number.isFinite(ctc)) throw new Error("Enter a valid Monthly CTC.");
   const componentTotal = roundMoney(heads
-    .filter((head) => head.headType === "employee_earning" || head.headType === "statutory_contribution")
+    .filter((head) => head.payrollHeadId !== ctcHead.payrollHeadId)
     .reduce((total, head) => total + Number(values[head.payrollHeadId] ?? 0), 0));
   const difference = roundMoney(componentTotal - ctc);
   const isBalanced = Math.abs(difference) <= MONEY_TOLERANCE;

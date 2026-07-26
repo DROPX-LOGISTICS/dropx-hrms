@@ -291,6 +291,10 @@ tbody tr:hover { background: #fbfcfb; }
 .config-badges em.active { color: var(--green); background: var(--green-soft); }
 .config-badges em.inactive { color: var(--muted); background: #f1f2f4; }
 .salary-config-card > form { overflow-x: auto; padding: 15px; }
+.salary-component-groups { display: grid; gap: 18px; }
+.salary-component-group { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.salary-component-group-ctc { border-color: #efd7b3; background: #fffdf8; }
+.salary-component-group .salary-component-table-wrap { margin: 0; }
 .salary-definition-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
 .salary-definition-toolbar p { margin: 3px 0 0; color: var(--muted); font-size: 10.5px; }
 .salary-definition-table { min-width: 1180px; table-layout: fixed; border: 1px solid var(--line); }
@@ -349,6 +353,7 @@ tbody tr:hover { background: #fbfcfb; }
 .employee-salary-table th:nth-child(2) { width: 16%; }
 .employee-salary-table th:nth-child(3) { width: 28%; }
 .employee-salary-table th:nth-child(4), .employee-salary-table th:nth-child(5) { width: 18%; }
+.employee-salary-table .employee-salary-group-row td { padding: 8px 10px; color: #663814; background: #fff8ef; font-size: 10px; font-weight: 850; letter-spacing: .045em; text-transform: uppercase; }
 .money-input { display: flex; align-items: stretch; }
 .money-input > span { display: grid; place-items: center; min-width: 32px; border: 1px solid #d2d7d3; border-right: 0; border-radius: 7px 0 0 7px; background: #f6f7f8; color: var(--muted); font-weight: 800; }
 .money-input input { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid #d2d7d3; border-radius: 0 7px 7px 0; font-size: 11.5px; }
