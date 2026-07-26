@@ -79,3 +79,60 @@ export async function syncEmployeeBiometricEnrolment(input: {
     : await supabaseAdmin.from("biometric_enrolments").insert(payload);
   if (result.error) throw new Error(result.error.message);
 }
+
+export async function syncContractorBiometricEnrolment(input: {
+  companyId: string;
+  createdBy: string;
+  effectiveFrom: string;
+  contractorId: string;
+  enrolmentId: string;
+  isActive?: boolean;
+  locationId: string;
+}) {
+  if (!supabaseAdmin) throw new Error("Supabase service role key is not configured.");
+  const now = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  const deactivate = await supabaseAdmin
+    .from("biometric_enrolments")
+    .update({ status: "Inactive", effective_to: today, updated_at: now })
+    .eq("company_id", input.companyId)
+    .eq("profile_type", "contractor")
+    .eq("account_id", input.contractorId)
+    .is("effective_to", null)
+    .neq("enrolment_id", input.enrolmentId);
+  if (deactivate.error) throw new Error(deactivate.error.message);
+
+  const existingResult = await supabaseAdmin
+    .from("biometric_enrolments")
+    .select("id, account_id")
+    .eq("company_id", input.companyId)
+    .eq("profile_type", "contractor")
+    .eq("enrolment_id", input.enrolmentId)
+    .is("effective_to", null)
+    .maybeSingle();
+  if (existingResult.error) throw new Error(existingResult.error.message);
+  if (existingResult.data && existingResult.data.account_id !== input.contractorId) {
+    throw new Error("Biometric enrolment ID is already assigned to another worker.");
+  }
+
+  const isActive = input.isActive !== false;
+  const payload = {
+    company_id: input.companyId,
+    enrolment_id: input.enrolmentId,
+    worker_type: "individual_contract",
+    profile_type: "contractor",
+    account_id: input.contractorId,
+    employee_id: null,
+    field_executive_id: null,
+    location_id: input.locationId,
+    status: isActive ? "Active" : "Inactive",
+    effective_from: input.effectiveFrom,
+    effective_to: isActive ? null : today,
+    created_by: input.createdBy,
+    updated_at: now
+  };
+  const result = existingResult.data
+    ? await supabaseAdmin.from("biometric_enrolments").update(payload).eq("id", existingResult.data.id).eq("company_id", input.companyId)
+    : await supabaseAdmin.from("biometric_enrolments").insert(payload);
+  if (result.error) throw new Error(result.error.message);
+}

@@ -107,8 +107,8 @@ tbody tr:hover { background: #fbfcfb; }
 .employee-avatar-card-status { display: flex; gap: 6px; margin-top: 8px; }
 .status-pill { display: inline-flex; align-items: center; min-height: 21px; padding: 3px 7px; border-radius: 999px; background: #edf1ee; color: #536158; font-size: 9.5px; font-weight: 800; text-transform: capitalize; }
 .status-pill.active, .status-pill.approved, .status-pill.present, .status-pill.p { color: var(--green); background: var(--green-soft); }
-.status-pill.pending { color: var(--amber); background: #fff4df; }
-.status-pill.rejected, .status-pill.inactive, .status-pill.absent, .status-pill.a { color: var(--red); background: #fff0ee; }
+.status-pill.pending, .status-pill.under-review { color: var(--amber); background: #fff4df; }
+.status-pill.rejected, .status-pill.returned, .status-pill.inactive, .status-pill.absent, .status-pill.a { color: var(--red); background: #fff0ee; }
 .access-message { margin-bottom: 16px; }
 .access-message p { margin: 5px 0 0; color: var(--muted); }
 .access-user-email { display: block; margin-top: 3px; color: var(--muted); }
@@ -144,6 +144,10 @@ tbody tr:hover { background: #fbfcfb; }
 .row-actions-popover a, .row-actions-popover button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 9px; border: 0; border-radius: 6px; color: inherit; background: transparent; text-align: left; font-size: 11.5px; font-weight: 700; cursor: pointer; }
 .row-actions-popover a:hover, .row-actions-popover button:hover { color: var(--brand-red); background: #fff3ed; }
 .employee-form-panel { margin-bottom: 14px; }
+.people-type-nav { display: inline-flex; gap: 5px; margin: -5px 0 16px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: #fff; box-shadow: var(--shadow); }
+.people-type-nav a { min-height: 32px; padding: 7px 11px; border-radius: 6px; color: var(--muted); font-size: 11.5px; font-weight: 800; }
+.people-type-nav a:hover { color: var(--brand-red); background: #fff5f0; }
+.people-type-nav a.active { color: #fff; background: linear-gradient(90deg, var(--brand-dark), var(--brand-red)); }
 .employee-edit-tabs { display: flex; gap: 6px; margin: -4px -4px 16px; padding: 4px 4px 10px; border-bottom: 1px solid var(--line); }
 .employee-edit-tab { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 7px 11px; border: 1px solid transparent; border-radius: 7px; color: var(--muted); background: transparent; font-size: 11.5px; font-weight: 800; cursor: pointer; }
 .employee-edit-tab:hover { color: var(--brand-red); background: #fff5f0; }
@@ -171,6 +175,19 @@ tbody tr:hover { background: #fbfcfb; }
 .field input:disabled { color: #777; background: #f4f4f5; cursor: not-allowed; }
 .mobile-field { display: grid; grid-template-columns: minmax(160px, .62fr) minmax(180px, 1fr); gap: 9px; }
 .field-help { color: var(--muted); font-size: 11px; }
+.profile-verification-inline { display: flex; min-height: 29px; align-items: center; gap: 7px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: #fafafa; font-size: 10px; }
+.profile-verification-inline.ok { color: var(--green); border-color: #bfe0cb; background: var(--green-soft); }
+.profile-verification-inline.warn { color: var(--amber); border-color: #efd6a7; background: #fff8e9; }
+.profile-verification-inline.error { color: var(--red); border-color: #f0c7c2; background: #fff0ee; }
+.profile-verification-inline > span { min-width: 0; overflow-wrap: anywhere; }
+.profile-verification-error { color: var(--red); font-weight: 700; }
+.profile-review-panel { display: grid; grid-template-columns: minmax(180px, .8fr) auto minmax(280px, 1.2fr); gap: 14px; align-items: end; margin-top: 18px; padding: 14px; border: 1px solid #efd6a7; border-radius: 9px; background: #fffaf2; }
+.profile-review-copy h3 { margin: 0; font-size: 14px; }
+.profile-review-copy p { margin: 4px 0 0; color: var(--muted); font-size: 10.5px; }
+.profile-review-approve, .profile-review-return { display: flex; align-items: flex-end; gap: 8px; }
+.profile-review-return .field { flex: 1; }
+.profile-review-return textarea { min-height: 62px; }
+.profile-return-note { margin-top: 8px !important; padding: 7px 9px; border: 1px solid #f0c7c2; border-radius: 7px; color: var(--red) !important; background: #fff5f3; }
 .error-text { color: var(--red); }
 .statutory-field { margin: 0; padding: 0; border: 0; }
 .statutory-field legend { margin-bottom: 9px; color: #46524a; font-size: 12px; font-weight: 800; }
@@ -396,4 +413,5 @@ tbody tr:hover { background: #fbfcfb; }
   .salary-create-workspace .not-applicable-label { text-align: left; }
 }
 @media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .salary-config-details { grid-template-columns: repeat(2, minmax(0, 1fr)); } .payroll-head-create, .payroll-head-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1050px) { .profile-review-panel { grid-template-columns: 1fr; align-items: stretch; } .profile-review-approve, .profile-review-return { align-items: stretch; } }
 @media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .salary-config-details, .settlement-entry, .inline-form.exit-update, .generated-id-summary, .access-row-form, .owner-access-row { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form, .salary-definition-actions, .salary-calculation-toolbar { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } .salary-create-workspace .salary-definition-table tr { grid-template-columns: 1fr; } .salary-create-workspace .salary-definition-table td:nth-child(3), .salary-create-workspace .salary-definition-table td:nth-child(6) { grid-column: 1; } .salary-config-modal-backdrop { padding: 6px; } .salary-config-modal { width: calc(100vw - 12px); max-height: calc(100vh - 12px); } .salary-config-modal-head, .salary-config-modal-body { padding-left: 13px; padding-right: 13px; } .salary-config-modal-actions { padding: 10px 13px; } }

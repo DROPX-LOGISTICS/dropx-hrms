@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEmployeeForm, parseLeaveRequest, safeReturnPath } from "./validation";
+import { parseContractorForm, parseEmployeeForm, parseLeaveRequest, safeReturnPath } from "./validation";
 
 function form(values: Record<string, string>) {
   const data = new FormData();
@@ -42,6 +42,38 @@ describe("parseEmployeeForm", () => {
     [{ ...valid, designation_id: "" }, "designation"]
   ])("rejects invalid employee input", (values, message) => {
     const result = parseEmployeeForm(form(values));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.toLowerCase()).toContain(String(message).toLowerCase());
+  });
+});
+
+describe("parseContractorForm", () => {
+  const valid = { full_name: "Ravi Kumar", mobile: "9876543210", mobile_country_code: "91", email: "ravi@example.com", date_of_join: "2026-07-20", location_id: "station-1", designation: "Line Haul Contractor" };
+
+  it("normalizes a valid independent contractor", () => {
+    expect(parseContractorForm(form(valid))).toEqual({
+      ok: true,
+      value: {
+        fullName: "Ravi Kumar",
+        mobile: "9876543210",
+        mobileCountryCode: "91",
+        email: "ravi@example.com",
+        dateOfJoin: "2026-07-20",
+        locationId: "station-1",
+        designation: "Line Haul Contractor"
+      }
+    });
+  });
+
+  it.each([
+    [{ ...valid, full_name: "R" }, "Full name"],
+    [{ ...valid, mobile: "123" }, "Mobile"],
+    [{ ...valid, email: "" }, "email"],
+    [{ ...valid, date_of_join: "today" }, "date"],
+    [{ ...valid, location_id: "" }, "location"],
+    [{ ...valid, designation: "" }, "designation"]
+  ])("rejects invalid contractor input", (values, message) => {
+    const result = parseContractorForm(form(values));
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.toLowerCase()).toContain(String(message).toLowerCase());
   });

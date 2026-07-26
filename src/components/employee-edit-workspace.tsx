@@ -12,6 +12,7 @@ type EmployeeEditWorkspaceProps = {
   employee: ComponentProps<typeof EmployeeEditForm>["employee"];
   locations: ComponentProps<typeof EmployeeEditForm>["locations"];
   designations: ComponentProps<typeof EmployeeEditForm>["designations"];
+  rules: ComponentProps<typeof EmployeeEditForm>["rules"];
   salaryAction: ComponentProps<typeof EmployeeSalaryConfigurationForm>["action"];
   assignment: ComponentProps<typeof EmployeeSalaryConfigurationForm>["assignment"];
   configurations: ComponentProps<typeof EmployeeSalaryConfigurationForm>["configurations"];
@@ -23,6 +24,7 @@ export function EmployeeEditWorkspace({
   employee,
   locations,
   designations,
+  rules,
   salaryAction,
   assignment,
   configurations
@@ -68,6 +70,7 @@ export function EmployeeEditWorkspace({
         employee={employee}
         locations={locations}
         designations={designations}
+        rules={rules}
       />
     </div> : <div
       id="employee-salary-panel"

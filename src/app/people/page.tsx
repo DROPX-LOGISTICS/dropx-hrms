@@ -5,6 +5,7 @@ import { EmployeeAvatar } from "@/components/employee-avatar";
 import { EmployeeForm } from "@/components/employee-form";
 import { EmployeeActionsMenu } from "@/components/employee-actions-menu";
 import { PageHeader } from "@/components/page-header";
+import { PeopleTypeNav } from "@/components/people-type-nav";
 import { StatusPill } from "@/components/status-pill";
 import { SubmitButton } from "@/components/submit-button";
 import { requireHrmsAuth } from "@/lib/auth";
@@ -26,7 +27,8 @@ export default async function PeoplePage({ searchParams }: { searchParams?: { ad
   ]);
 
   return <AppShell auth={auth} active="People">
-    <PageHeader eyebrow="Workforce master" title="People" description="Employees managed by HRMS. Field executives remain in the partner dashboard." action={manage ? <Link className="button primary" href="/people?add=1">Add employee</Link> : undefined} />
+    <PageHeader eyebrow="Workforce master" title="People" description="Onboard and manage employees and independent contractors in separate registers." action={manage ? <Link className="button primary" href="/people?add=1">Add employee</Link> : undefined} />
+    <PeopleTypeNav active="employees" />
     {searchParams?.error ? <div className="alert error" role="alert">{searchParams.error}</div> : null}
     {searchParams?.notice ? <div className="alert success" role="status">{searchParams.notice}</div> : null}
 

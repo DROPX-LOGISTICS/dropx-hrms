@@ -21,6 +21,10 @@ export function isEmployeeDesignation(designation: EmployeeDesignationOption) {
   return normalizeDesignationCategories(designation.onboarding_categories).includes("employees");
 }
 
+export function isContractorDesignation(designation: EmployeeDesignationOption) {
+  return normalizeDesignationCategories(designation.onboarding_categories).includes("contractors");
+}
+
 export function employeeDesignationsForLocation(
   designations: EmployeeDesignationOption[],
   location: EmployeeLocationOption | undefined
@@ -28,6 +32,18 @@ export function employeeDesignationsForLocation(
   if (!location) return [];
   return designations.filter((designation) => {
     if (!isEmployeeDesignation(designation)) return false;
+    const modelIds = designation.model_ids ?? [];
+    return modelIds.length === 0 || Boolean(location.location_model_id && modelIds.includes(location.location_model_id));
+  });
+}
+
+export function contractorDesignationsForLocation(
+  designations: EmployeeDesignationOption[],
+  location: EmployeeLocationOption | undefined
+) {
+  if (!location) return [];
+  return designations.filter((designation) => {
+    if (!isContractorDesignation(designation)) return false;
     const modelIds = designation.model_ids ?? [];
     return modelIds.length === 0 || Boolean(location.location_model_id && modelIds.includes(location.location_model_id));
   });

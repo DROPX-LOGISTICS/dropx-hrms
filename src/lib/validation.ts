@@ -47,6 +47,37 @@ export function parseEmployeeForm(formData: FormData): ValidationResult<{
   };
 }
 
+export function parseContractorForm(formData: FormData): ValidationResult<{
+  fullName: string;
+  mobile: string;
+  email: string;
+  dateOfJoin: string;
+  locationId: string;
+  designation: string;
+  mobileCountryCode: string;
+}> {
+  const fullName = text(formData.get("full_name"));
+  const mobile = text(formData.get("mobile")).replace(/\D/g, "");
+  const mobileCountryCode = text(formData.get("mobile_country_code")).replace(/\D/g, "") || "91";
+  const email = text(formData.get("email")).toLowerCase();
+  const dateOfJoin = text(formData.get("date_of_join"));
+  const locationId = text(formData.get("location_id"));
+  const designation = text(formData.get("designation"));
+  if (fullName.length < 2) return { ok: false, error: "Full name must contain at least two characters." };
+  if (!/^\d{6,15}$/.test(mobile)) return { ok: false, error: "Mobile number must contain 6 to 15 digits." };
+  if (!/^\d{1,4}$/.test(mobileCountryCode)) return { ok: false, error: "Select a valid mobile country code." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "Enter a valid email address." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfJoin) || Number.isNaN(Date.parse(dateOfJoin))) {
+    return { ok: false, error: "Select a valid date of joining." };
+  }
+  if (!locationId) return { ok: false, error: "Select a work location." };
+  if (!designation) return { ok: false, error: "Select a designation." };
+  return {
+    ok: true,
+    value: { fullName, mobile, email, dateOfJoin, locationId, designation, mobileCountryCode }
+  };
+}
+
 export function parseLeaveRequest(formData: FormData): ValidationResult<{
   leaveTypeId: string;
   startDate: string;

@@ -6,7 +6,17 @@ import { EllipsisVertical, Eye, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-export function EmployeeActionsMenu({ employeeId, employeeName, canEdit }: { employeeId: string; employeeName: string; canEdit: boolean }) {
+export function EmployeeActionsMenu({
+  employeeId,
+  employeeName,
+  canEdit,
+  basePath = "/people"
+}: {
+  employeeId: string;
+  employeeName: string;
+  canEdit: boolean;
+  basePath?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
@@ -32,16 +42,16 @@ export function EmployeeActionsMenu({ employeeId, employeeName, canEdit }: { emp
     if (open) return setOpen(false);
     const bounds = rootRef.current?.getBoundingClientRect();
     if (bounds) setPosition({ top: bounds.bottom + 5, right: window.innerWidth - bounds.right });
-    router.prefetch(`/people/${employeeId}`);
-    if (canEdit) router.prefetch(`/people/${employeeId}?edit=1`);
+    router.prefetch(`${basePath}/${employeeId}`);
+    if (canEdit) router.prefetch(`${basePath}/${employeeId}?edit=1`);
     setOpen(true);
   }
 
   return <div className="row-actions-menu" ref={rootRef}>
-    <button className="row-actions-trigger" type="button" aria-label={`Actions for ${employeeName}`} aria-haspopup="menu" aria-expanded={open} onClick={toggleMenu} onPointerEnter={() => router.prefetch(`/people/${employeeId}`)}><EllipsisVertical size={18} /></button>
+    <button className="row-actions-trigger" type="button" aria-label={`Actions for ${employeeName}`} aria-haspopup="menu" aria-expanded={open} onClick={toggleMenu} onPointerEnter={() => router.prefetch(`${basePath}/${employeeId}`)}><EllipsisVertical size={18} /></button>
     {open ? createPortal(<div className="row-actions-popover" ref={popoverRef} role="menu" aria-label={`Actions for ${employeeName}`} style={{ top: position.top, right: position.right }}>
-      <Link role="menuitem" href={`/people/${employeeId}`} onClick={() => setOpen(false)}><Eye size={15} />View</Link>
-      {canEdit ? <Link role="menuitem" href={`/people/${employeeId}?edit=1`} onClick={() => setOpen(false)}><Pencil size={15} />Edit</Link> : null}
+      <Link role="menuitem" href={`${basePath}/${employeeId}`} onClick={() => setOpen(false)}><Eye size={15} />View</Link>
+      {canEdit ? <Link role="menuitem" href={`${basePath}/${employeeId}?edit=1`} onClick={() => setOpen(false)}><Pencil size={15} />Edit</Link> : null}
     </div>, document.body) : null}
   </div>;
 }

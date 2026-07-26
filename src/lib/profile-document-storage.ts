@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const PROFILE_DOCUMENT_BUCKET = "employee-profile-documents";
+export type ProfileDocumentOwnerType = "employee" | "contractor";
 
 function safeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_") || "profile-document";
@@ -12,19 +13,21 @@ function uploadedFile(value: FormDataEntryValue | null): value is File {
   return value instanceof File && value.size > 0;
 }
 
-export async function uploadEmployeeProfileDocument({
+export async function uploadProfileDocument({
   companyId,
   documentKey,
-  employeeId,
+  ownerId,
+  ownerType,
   fileValue
 }: {
   companyId: string;
   documentKey: string;
-  employeeId: string;
+  ownerId: string;
+  ownerType: ProfileDocumentOwnerType;
   fileValue: FormDataEntryValue | null;
 }) {
   if (!supabaseAdmin || !uploadedFile(fileValue)) return null;
-  const path = `${companyId}/employee/${employeeId}/${documentKey}/${Date.now()}-${randomUUID()}-${safeFileName(fileValue.name)}`;
+  const path = `${companyId}/${ownerType}/${ownerId}/${documentKey}/${Date.now()}-${randomUUID()}-${safeFileName(fileValue.name)}`;
   const { error } = await supabaseAdmin.storage.from(PROFILE_DOCUMENT_BUCKET).upload(
     path,
     Buffer.from(await fileValue.arrayBuffer()),
@@ -34,16 +37,18 @@ export async function uploadEmployeeProfileDocument({
   return path;
 }
 
-export async function replaceEmployeeProfileDocument({
+export async function replaceProfileDocument({
   companyId,
   documentLabel,
-  employeeId,
+  ownerId,
+  ownerType,
   existingPath,
   replacedBy
 }: {
   companyId: string;
   documentLabel: string;
-  employeeId: string;
+  ownerId: string;
+  ownerType: ProfileDocumentOwnerType;
   existingPath: string | null;
   replacedBy: string;
 }) {
@@ -51,8 +56,8 @@ export async function replaceEmployeeProfileDocument({
   const now = new Date();
   const { error } = await supabaseAdmin.from("profile_document_trash").insert({
     company_id: companyId,
-    owner_type: "employee",
-    owner_id: employeeId,
+    owner_type: ownerType,
+    owner_id: ownerId,
     document_label: documentLabel,
     file_name: existingPath.split("/").pop(),
     storage_bucket: PROFILE_DOCUMENT_BUCKET,
@@ -69,4 +74,36 @@ export async function replaceEmployeeProfileDocument({
     return;
   }
   throw new Error(error.message);
+}
+
+export function uploadEmployeeProfileDocument(input: {
+  companyId: string;
+  documentKey: string;
+  employeeId: string;
+  fileValue: FormDataEntryValue | null;
+}) {
+  return uploadProfileDocument({
+    companyId: input.companyId,
+    documentKey: input.documentKey,
+    ownerId: input.employeeId,
+    ownerType: "employee",
+    fileValue: input.fileValue
+  });
+}
+
+export function replaceEmployeeProfileDocument(input: {
+  companyId: string;
+  documentLabel: string;
+  employeeId: string;
+  existingPath: string | null;
+  replacedBy: string;
+}) {
+  return replaceProfileDocument({
+    companyId: input.companyId,
+    documentLabel: input.documentLabel,
+    ownerId: input.employeeId,
+    ownerType: "employee",
+    existingPath: input.existingPath,
+    replacedBy: input.replacedBy
+  });
 }

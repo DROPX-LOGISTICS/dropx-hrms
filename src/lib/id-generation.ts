@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "./supabase/admin";
 
 type EmployeeIdType = "dropx_id" | "biometric_id";
+type WorkerCategory = "employee" | "contractor";
 
 type GenerateEmployeeIdInput = {
   companyId: string;
@@ -14,11 +15,11 @@ const generators: Record<EmployeeIdType, { functionName: string; label: string }
   biometric_id: { functionName: "generate_biometric_worker_id", label: "Biometric ID" }
 };
 
-async function generateEmployeeId(type: EmployeeIdType, input: GenerateEmployeeIdInput) {
+async function generateWorkerId(type: EmployeeIdType, input: GenerateEmployeeIdInput, category: WorkerCategory) {
   if (!supabaseAdmin) throw new Error("Database configuration is missing.");
   const generator = generators[type];
   const { data, error } = await supabaseAdmin.rpc(generator.functionName, {
-    p_category: "employee",
+    p_category: category,
     p_company_id: input.companyId,
     p_designation_id: input.designationId,
     p_location_id: input.locationId,
@@ -33,9 +34,17 @@ async function generateEmployeeId(type: EmployeeIdType, input: GenerateEmployeeI
 }
 
 export function generateEmployeeCode(input: GenerateEmployeeIdInput) {
-  return generateEmployeeId("dropx_id", input);
+  return generateWorkerId("dropx_id", input, "employee");
 }
 
 export function generateEmployeeBiometricId(input: GenerateEmployeeIdInput) {
-  return generateEmployeeId("biometric_id", input);
+  return generateWorkerId("biometric_id", input, "employee");
+}
+
+export function generateContractorCode(input: GenerateEmployeeIdInput) {
+  return generateWorkerId("dropx_id", input, "contractor");
+}
+
+export function generateContractorBiometricId(input: GenerateEmployeeIdInput) {
+  return generateWorkerId("biometric_id", input, "contractor");
 }
