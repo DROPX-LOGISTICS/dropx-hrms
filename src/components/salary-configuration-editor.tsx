@@ -164,7 +164,7 @@ function SalaryComponentRows({
             const baseOptions = selectedRowHeads.map((head) => ({ value: head.code, label: `${head.name} · ${head.code}` }));
 
             return <tr key={row.key}>
-              <td>
+              <td data-label="Payroll component">
                 <SearchableSelect
                   id={`${idPrefix}-payroll-head-${row.key}`}
                   name="payroll_head_id"
@@ -183,7 +183,7 @@ function SalaryComponentRows({
                   }}
                 />
               </td>
-              <td>
+              <td data-label="Calculation method">
                 {isCtc ? <>
                   <input name="value_method" type="hidden" value="input" />
                   <span className="custom-value-label">Employee input</span>
@@ -199,7 +199,7 @@ function SalaryComponentRows({
                   onChange={(method) => updateRow(row.key, { method: method as PayrollValueMethod })}
                 />}
               </td>
-              <td>
+              <td data-label="Value setup">
                 {isCtc ? <>
                   <input name="value_expression" type="hidden" value="" />
                   <span className="salary-display-value">Entered on employee profile</span>
@@ -258,9 +258,9 @@ function SalaryComponentRows({
                   {!readOnly ? <div className="formula-token-list"><span>Insert:</span>{selectedRowHeads.map((head) => <button key={head.id} type="button" onClick={() => updateRow(row.key, { advancedFormula: `${row.advancedFormula}${row.advancedFormula ? " " : ""}[${head.code}]` })}>{head.code}</button>)}</div> : null}
                 </div>}
               </td>
-              <td>{isCtc ? <><input name="minimum_value" type="hidden" value="" /><span className="not-applicable-label">Not applicable</span></> : <input aria-label={`${selectedHead?.name ?? "Component"} minimum value`} name="minimum_value" type="number" min="0" step="0.01" value={row.minimumValue} disabled={readOnly} onChange={(event) => updateRow(row.key, { minimumValue: event.target.value })} placeholder="Optional" />}</td>
-              <td>{isCtc ? <><input name="maximum_value" type="hidden" value="" /><span className="not-applicable-label">Not applicable</span></> : <input aria-label={`${selectedHead?.name ?? "Component"} maximum value`} name="maximum_value" type="number" min="0" step="0.01" value={row.maximumValue} disabled={readOnly} onChange={(event) => updateRow(row.key, { maximumValue: event.target.value })} placeholder="Optional" />}</td>
-              <td>{isCtc ? <span className="locked-label">Protected</span> : readOnly ? <span className="not-applicable-label">—</span> : <button aria-label={`Remove ${selectedHead?.name ?? "component"} row`} className="icon-button danger" type="button" onClick={() => removeRow(row.key)}><Trash2 size={15} /></button>}</td>
+              <td data-label="Minimum">{isCtc ? <><input name="minimum_value" type="hidden" value="" /><span className="not-applicable-label">Not applicable</span></> : <input aria-label={`${selectedHead?.name ?? "Component"} minimum value`} name="minimum_value" type="number" min="0" step="0.01" value={row.minimumValue} disabled={readOnly} onChange={(event) => updateRow(row.key, { minimumValue: event.target.value })} placeholder="Optional" />}</td>
+              <td data-label="Maximum">{isCtc ? <><input name="maximum_value" type="hidden" value="" /><span className="not-applicable-label">Not applicable</span></> : <input aria-label={`${selectedHead?.name ?? "Component"} maximum value`} name="maximum_value" type="number" min="0" step="0.01" value={row.maximumValue} disabled={readOnly} onChange={(event) => updateRow(row.key, { maximumValue: event.target.value })} placeholder="Optional" />}</td>
+              <td data-label="Action">{isCtc ? <span className="locked-label">Protected</span> : readOnly ? <span className="not-applicable-label">—</span> : <button aria-label={`Remove ${selectedHead?.name ?? "component"} row`} className="icon-button danger" type="button" onClick={() => removeRow(row.key)}><Trash2 size={15} /></button>}</td>
             </tr>;
           })}
         </tbody>
