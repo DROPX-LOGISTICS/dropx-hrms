@@ -3,6 +3,8 @@ import { ClientRedirect } from "@/components/client-redirect";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getHrmsAuth } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
   const client = createServerSupabaseClient();
   let user = null as { email?: string | null } | null;

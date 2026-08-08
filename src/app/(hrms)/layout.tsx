@@ -2,6 +2,10 @@ import { AppShellLayout } from "@/components/app-shell-layout";
 import { ClientRedirect } from "@/components/client-redirect";
 import { getHrmsAuth, toClientAuth } from "@/lib/auth";
 
+// Workers Builds (Linux CI) otherwise statically prerenders this tree; runtime cookies() then 500s with
+// "Page changed from static to dynamic at runtime /, reason: cookies".
+export const dynamic = "force-dynamic";
+
 export default async function HrmsLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   try {
     const auth = await getHrmsAuth();

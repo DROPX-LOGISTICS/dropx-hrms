@@ -15,7 +15,7 @@ In the Worker → **Settings → Builds**:
 
 `cf:build` runs OpenNext with `--dangerouslyUseUnsupportedNextVersion` (required on Next 14). `cf:deploy` passes `--keep-vars` so dashboard vars/secrets are not deleted on each Git push.
 
-**Critical:** also add these under **Build variables and secrets** (same values as Worker secrets). Without them, Next inlines empty `NEXT_PUBLIC_*` at build time and authenticated pages 500 even though runtime secrets look fine. Runtime Variables/Secrets alone are not enough for a GitHub build unless the app uses dynamic env reads (this repo does via `src/lib/env.ts`).
+**Critical:** also add these under **Build variables and secrets** (same values as Worker secrets). Without them, Next can mis-build auth. This app also forces `dynamic = "force-dynamic"` on HRMS routes so CI cannot statically prerender pages that read cookies (that mismatch is a common GitHub-only 500).
 
 | Build + runtime |
 | --- |

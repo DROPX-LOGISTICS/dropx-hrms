@@ -7,6 +7,7 @@ import { getHrmsAuth } from "@/lib/auth";
 import { loadOverview } from "@/lib/data";
 import { can } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Overview" };
 export default async function OverviewPage() {
   const auth = await getHrmsAuth();
