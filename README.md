@@ -1,6 +1,30 @@
 # DropX HRMS
 
-Independent HRMS frontend for DropX Logistics. It deploys as its own Vercel project and uses the existing DropX Supabase project without changing the partner-dashboard application.
+Independent HRMS frontend for DropX Logistics. It deploys to **Cloudflare Workers** via OpenNext and uses the existing DropX Supabase project without changing the partner-dashboard application.
+
+## Cloudflare Workers Builds (GitHub)
+
+GitHub deploys must use the OpenNext commands — **not** bare `wrangler deploy` or `pnpm build` alone. Wrong CI settings overwrite a good manual deploy and commonly cause authenticated `/` **500**s (missing OpenNext output and/or wiped runtime vars).
+
+In the Worker → **Settings → Builds**:
+
+| Setting | Value |
+| --- | --- |
+| **Build command** | `pnpm run cf:build` |
+| **Deploy command** | `pnpm run cf:deploy` |
+
+`cf:build` runs OpenNext with `--dangerouslyUseUnsupportedNextVersion` (required on Next 14). `cf:deploy` passes `--keep-vars` so dashboard vars/secrets are not deleted on each Git push.
+
+Also set the same names as `.env.example` in **both**:
+
+1. **Build variables and secrets** (so `NEXT_PUBLIC_*` can be inlined at build time)
+2. **Worker runtime** Variables / Secrets (`SUPABASE_SERVICE_ROLE_KEY`, etc.)
+
+Local equivalent of a good deploy:
+
+```bash
+pnpm run deploy
+```
 
 ## Initial live scope
 
