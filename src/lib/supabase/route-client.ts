@@ -27,23 +27,35 @@ function readChunked(get: (name: string) => string | undefined, key: string) {
   return value || null;
 }
 
-function queueClear(pending: PendingCookie[], key: string) {
+function queueClear(pending: PendingCookie[], key: string, request?: NextRequest) {
   pending.push({ name: key, value: "", maxAge: 0 });
   for (let index = 0; index < MAX_CHUNKS; index += 1) {
-    pending.push({ name: `${key}.${index}`, value: "", maxAge: 0 });
+    const name = `${key}.${index}`;
+    // Only clear chunk cookies that already exist — avoids flooding Set-Cookie on Workers.
+    if (!request || request.cookies.get(name)) {
+      pending.push({ name, value: "", maxAge: 0 });
+    }
   }
 }
 
-function queueWrite(pending: PendingCookie[], key: string, value: string) {
-  queueClear(pending, key);
+function queueWrite(pending: PendingCookie[], key: string, value: string, request?: NextRequest) {
+  queueClear(pending, key, request);
+  // Prefer a single cookie for small values (PKCE verifier). Chunk only when needed.
+  if (value.length <= CHUNK_SIZE) {
+    pending.push({ name: key, value, maxAge: authCookieOptions.maxAge });
+    return;
+  }
   const chunks = value.match(new RegExp(`.{1,${CHUNK_SIZE}}`, "g")) ?? [];
   chunks.forEach((chunk, index) => {
     pending.push({ name: `${key}.${index}`, value: chunk, maxAge: authCookieOptions.maxAge });
   });
 }
 
+/** Last write wins per cookie name — prevents Max-Age=0 from wiping a later value. */
 export function applyPendingAuthCookies(response: NextResponse, pending: PendingCookie[]) {
-  for (const cookie of pending) {
+  const byName = new Map<string, PendingCookie>();
+  for (const cookie of pending) byName.set(cookie.name, cookie);
+  for (const cookie of byName.values()) {
     response.cookies.set(cookie.name, cookie.value, { ...authCookieOptions, maxAge: cookie.maxAge });
   }
 }
@@ -67,7 +79,7 @@ export function createRouteSupabaseClient(request: NextRequest): {
     for (const key of [AUTH_STORAGE_KEY, `${AUTH_STORAGE_KEY}-code-verifier`]) {
       removed.add(key);
       memory.delete(key);
-      queueClear(pendingCookies, key);
+      queueClear(pendingCookies, key, request);
     }
   };
 
@@ -89,12 +101,12 @@ export function createRouteSupabaseClient(request: NextRequest): {
         setItem: (key, value) => {
           removed.delete(key);
           memory.set(key, value);
-          queueWrite(pendingCookies, key, value);
+          queueWrite(pendingCookies, key, value, request);
         },
         removeItem: (key) => {
           removed.add(key);
           memory.delete(key);
-          queueClear(pendingCookies, key);
+          queueClear(pendingCookies, key, request);
         }
       }
     }

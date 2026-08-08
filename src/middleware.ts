@@ -9,7 +9,7 @@ const MAX_CHUNKS = 8;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path === "/login" || path.startsWith("/auth/") || path.startsWith("/_next/") || path.includes(".")) return NextResponse.next();
+  if (path === "/login" || path.startsWith("/auth/") || path.startsWith("/api/") || path.startsWith("/_next/") || path.includes(".")) return NextResponse.next();
   if (!url || !anonKey) return NextResponse.redirect(new URL("/login?reason=Authentication%20is%20not%20configured", request.url));
 
   const response = NextResponse.next();
