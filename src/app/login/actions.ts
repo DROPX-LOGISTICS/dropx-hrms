@@ -6,8 +6,13 @@ import { AUTH_RETURN_COOKIE, AUTH_RETURN_TTL_SECONDS, resolveAuthReturnPath } fr
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function requestOrigin() {
+  // Prefer explicit app URL so OAuth always returns to HRMS, not Partner Ops Site URL.
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (configured) return configured;
+
   const requestHeaders = headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
+  const hostHeader = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
+  const host = hostHeader.split(",")[0]?.trim() || "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${protocol}://${host}`;
 }

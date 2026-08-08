@@ -1,7 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { HrmsAuthContext } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { isContractorDesignation, isEmployeeDesignation } from "@/lib/employee-options";
 import { normalizeProfileFieldRules } from "@/lib/workforce-profile";
 
@@ -52,8 +52,9 @@ function permittedLocationIds(auth: HrmsAuthContext) {
 }
 
 function requireAdmin() {
-  if (!supabaseAdmin) throw new Error("Supabase service-role configuration is missing.");
-  return supabaseAdmin;
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase service-role configuration is missing.");
+  return admin;
 }
 
 const getCachedProfileDocumentUrls = unstable_cache(async (paths: string[]) => {

@@ -2,12 +2,21 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { SubmitButton } from "@/components/submit-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { signInWithGoogle } from "./actions";
+import { getHrmsAuth } from "@/lib/auth";
+import { signInWithGoogle, signOut } from "./actions";
 
 export default async function LoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
   const client = createServerSupabaseClient();
   const { data } = client ? await client.auth.getUser() : { data: { user: null } };
-  if (data.user) redirect("/");
+  const hrmsAuth = data.user ? await getHrmsAuth() : null;
+
+  // Only enter the app when HRMS access is granted. Otherwise stay here with Sign out
+  // (avoids login ↔ dashboard redirect loop).
+  if (data.user && hrmsAuth) {
+    const next = searchParams?.next;
+    redirect(next && next.startsWith("/") ? next : "/");
+  }
+
   return (
     <main className="auth-page">
       <section className="auth-card">
@@ -19,10 +28,22 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
         <h1>People operations, in one place.</h1>
         <p className="auth-copy">Secure HRMS for employees, attendance, leave and approvals.</p>
         {searchParams?.reason ? <div className="alert error" role="alert">{searchParams.reason}</div> : null}
-        <form action={signInWithGoogle}>
-          <input type="hidden" name="next" value={searchParams?.next ?? "/"} />
-          <SubmitButton className="button primary full" pendingLabel="Opening Google…">Continue with Google</SubmitButton>
-        </form>
+        {data.user ? (
+          <>
+            <p className="auth-copy">
+              Signed in as <strong>{data.user.email}</strong>, but this account is not linked for HRMS yet.
+              Ask an admin to grant access, then sign out and sign in again.
+            </p>
+            <form action={signOut}>
+              <SubmitButton className="button secondary full" pendingLabel="Signing out…">Sign out</SubmitButton>
+            </form>
+          </>
+        ) : (
+          <form action={signInWithGoogle}>
+            <input type="hidden" name="next" value={searchParams?.next ?? "/"} />
+            <SubmitButton className="button primary full" pendingLabel="Opening Google…">Continue with Google</SubmitButton>
+          </form>
+        )}
         <p className="fine-print">Only authorised DropX accounts can continue.</p>
       </section>
     </main>

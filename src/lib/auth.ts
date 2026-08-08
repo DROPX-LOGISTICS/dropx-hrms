@@ -1,8 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { unstable_cache } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { can, HrmsPermission, permissionsForRole } from "@/lib/permissions";
 
 export type HrmsAuthContext = {
@@ -30,31 +29,36 @@ function isMissingTable(error: unknown) {
   return message.includes("does not exist") || message.includes("schema cache");
 }
 
-const getCachedHrmsAccess = unstable_cache(async (userId: string) => {
-  if (!supabaseAdmin) return null;
-  const { data: profile } = await supabaseAdmin
+async function loadHrmsAccess(userId: string) {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+
+  const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("id, email, full_name, company_id, role_id, location_scope_ids, is_active, is_master_owner")
     .eq("id", userId)
     .maybeSingle();
-  if (!profile?.is_active || !profile.company_id) return null;
+  if (profileError || !profile?.is_active || !profile.company_id) return null;
 
-  const [{ data: company }, { data: existingRole }] = await Promise.all([
-    supabaseAdmin.from("companies").select("id, name, is_active").eq("id", profile.company_id).maybeSingle(),
+  const [{ data: company }, roleResult] = await Promise.all([
+    admin.from("companies").select("id, name, is_active").eq("id", profile.company_id).maybeSingle(),
     profile.role_id
-      ? supabaseAdmin.from("user_roles").select("code, location_access_mode, is_active").eq("id", profile.role_id).maybeSingle()
-      : Promise.resolve({ data: null })
+      ? admin.from("user_roles").select("code, location_access_mode, is_active").eq("id", profile.role_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null })
   ]);
   if (!company?.is_active) return null;
+  const existingRole = roleResult.data;
 
   const existingRoleCode = String(existingRole?.code ?? "").toUpperCase();
   const isOwner = Boolean(profile.is_master_owner) || existingRoleCode === "OWNER";
   let roleCode = isOwner ? "OWNER" : "";
-  let locationIds = Array.isArray(profile.location_scope_ids) ? profile.location_scope_ids.filter((value): value is string => typeof value === "string") : [];
+  let locationIds = Array.isArray(profile.location_scope_ids)
+    ? profile.location_scope_ids.filter((value): value is string => typeof value === "string")
+    : [];
   let allLocations = isOwner || existingRole?.location_access_mode === "all_locations";
 
   if (!isOwner) {
-    const { data: hrAccess, error } = await supabaseAdmin
+    const { data: hrAccess, error } = await admin
       .from("hr_user_access")
       .select("role_code, location_ids, all_locations, is_active")
       .eq("company_id", profile.company_id)
@@ -80,16 +84,16 @@ const getCachedHrmsAccess = unstable_cache(async (userId: string) => {
     locationIds,
     allLocations
   };
-}, ["hrms-access-v1"], { revalidate: 15 });
+}
 
 export const getHrmsAuth = cache(async (): Promise<HrmsAuthContext | null> => {
   const authClient = createServerSupabaseClient();
-  if (!authClient || !supabaseAdmin) return null;
+  const admin = getSupabaseAdmin();
+  if (!authClient || !admin) return null;
   const { data: authData } = await authClient.auth.getUser();
   const user = authData.user;
-  // console.log("user", user);
   if (!user) return null;
-  const access = await getCachedHrmsAccess(user.id);
+  const access = await loadHrmsAccess(user.id);
   if (!access) return null;
   const { permissionCodes, ...details } = access;
   return {
