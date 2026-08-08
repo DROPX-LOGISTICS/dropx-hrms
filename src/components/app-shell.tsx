@@ -7,8 +7,6 @@ import { BarChart3, CalendarCheck2, CalendarDays, CheckSquare2, CircleDollarSign
 import type { HrmsAuthClientContext } from "@/lib/auth";
 import { activeNavLabel } from "@/lib/nav-active";
 import { can } from "@/lib/permissions";
-import { signOut } from "@/app/login/actions";
-import { SubmitButton } from "@/components/submit-button";
 
 const mainNav = [
   { href: "/", label: "Overview", permission: "overview.view" as const, icon: BarChart3 },
@@ -71,7 +69,7 @@ export function AppShell({ auth, children, contentPending = false }: { auth: Hrm
         <div className="sidebar-user">
           <div className="avatar">{auth.fullName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</div>
           <div><strong>{auth.fullName}</strong><small>{auth.roleCode.replaceAll("_", " ")}</small></div>
-          <form action={signOut}><SubmitButton className="link-button" pendingLabel="Signing out…">Sign out</SubmitButton></form>
+          <a className="link-button" href="/auth/signout">Sign out</a>
         </div>
       </aside>
       <main className="content">{children}</main>

@@ -19,13 +19,11 @@ function readEnv(name: string): string | undefined {
 
 /** Resolve service-role client at request time (Cloudflare secrets load per-request). */
 export function getSupabaseAdmin(): SupabaseClient | null {
-  if (cached !== undefined) return cached;
+  // Never permanently cache a miss — Workers may resolve secrets after first touch.
+  if (cached) return cached;
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
   const serviceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !serviceRoleKey) {
-    cached = null;
-    return null;
-  }
+  if (!url || !serviceRoleKey) return null;
   cached = createClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
