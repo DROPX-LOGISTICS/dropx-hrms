@@ -1,21 +1,8 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { readEnv } from "@/lib/env";
 
 let cached: SupabaseClient | null | undefined;
-
-function readEnv(name: string): string | undefined {
-  const fromProcess = process.env[name]?.trim();
-  if (fromProcess) return fromProcess;
-  try {
-    // Runtime secrets/bindings on Cloudflare Workers
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCloudflareContext } = require("@opennextjs/cloudflare") as typeof import("@opennextjs/cloudflare");
-    const env = getCloudflareContext().env as Record<string, string | undefined>;
-    return env?.[name]?.trim() || undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 /** Resolve service-role client at request time (Cloudflare secrets load per-request). */
 export function getSupabaseAdmin(): SupabaseClient | null {

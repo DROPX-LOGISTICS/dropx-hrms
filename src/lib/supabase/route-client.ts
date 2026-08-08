@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { readEnv } from "@/lib/env";
 
 export const AUTH_STORAGE_KEY = "dropx-hrms-auth";
 const CHUNK_SIZE = 3000;
@@ -69,8 +70,8 @@ export function createRouteSupabaseClient(request: NextRequest): {
   pendingCookies: PendingCookie[];
   clearAuthSession: () => void;
 } {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   const pendingCookies: PendingCookie[] = [];
   const memory = new Map<string, string>();
   const removed = new Set<string>();
@@ -123,7 +124,7 @@ export function oauthAppOrigin(request: NextRequest) {
     const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "") ?? "http";
     return `${proto}://${host.split(",")[0]?.trim()}`;
   }
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  const configured = readEnv("NEXT_PUBLIC_APP_URL")?.replace(/\/$/, "");
   if (configured) return configured;
   return request.nextUrl.origin;
 }

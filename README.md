@@ -15,10 +15,14 @@ In the Worker → **Settings → Builds**:
 
 `cf:build` runs OpenNext with `--dangerouslyUseUnsupportedNextVersion` (required on Next 14). `cf:deploy` passes `--keep-vars` so dashboard vars/secrets are not deleted on each Git push.
 
-Also set the same names as `.env.example` in **both**:
+**Critical:** also add these under **Build variables and secrets** (same values as Worker secrets). Without them, Next inlines empty `NEXT_PUBLIC_*` at build time and authenticated pages 500 even though runtime secrets look fine. Runtime Variables/Secrets alone are not enough for a GitHub build unless the app uses dynamic env reads (this repo does via `src/lib/env.ts`).
 
-1. **Build variables and secrets** (so `NEXT_PUBLIC_*` can be inlined at build time)
-2. **Worker runtime** Variables / Secrets (`SUPABASE_SERVICE_ROLE_KEY`, etc.)
+| Build + runtime |
+| --- |
+| `NEXT_PUBLIC_SUPABASE_URL` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| `NEXT_PUBLIC_APP_URL` |
+| `SUPABASE_SERVICE_ROLE_KEY` |
 
 Local equivalent of a good deploy:
 

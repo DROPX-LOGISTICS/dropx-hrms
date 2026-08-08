@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -13,17 +14,7 @@ export async function GET() {
 
   const present: Record<string, boolean> = {};
   for (const name of names) {
-    let value = process.env[name]?.trim();
-    if (!value) {
-      try {
-        const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-        const env = getCloudflareContext().env as Record<string, string | undefined>;
-        value = env?.[name]?.trim();
-      } catch {
-        value = undefined;
-      }
-    }
-    present[name] = Boolean(value);
+    present[name] = Boolean(readEnv(name));
   }
 
   const ok = present.NEXT_PUBLIC_SUPABASE_URL && present.NEXT_PUBLIC_SUPABASE_ANON_KEY && present.SUPABASE_SERVICE_ROLE_KEY;

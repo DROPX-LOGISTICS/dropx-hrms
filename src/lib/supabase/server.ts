@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { readEnv } from "@/lib/env";
 
 const STORAGE_KEY = "dropx-hrms-auth";
 const MAX_CHUNKS = 8;
@@ -11,8 +12,8 @@ const MAX_CHUNKS = 8;
  * middleware / route handlers only.
  */
 export function createServerSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!url || !anonKey) return null;
   const store = cookies();
 

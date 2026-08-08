@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { readEnv } from "@/lib/env";
 
 const STORAGE_KEY = "dropx-hrms-auth";
 const CHUNK_SIZE = 3000;
@@ -71,8 +72,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!url || !anonKey) {
     return NextResponse.redirect(new URL("/login?reason=Authentication%20is%20not%20configured", request.url));
   }
