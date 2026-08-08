@@ -221,6 +221,37 @@ tbody tr:hover { background: #fbfcfb; }
 .confirm-modal { width: min(390px, 100%); padding: 19px; border-radius: 10px; border-top: 3px solid var(--brand-dark); background: #fff; box-shadow: 0 20px 56px rgba(24, 24, 27, .22); }
 .confirm-modal h3 { margin: 0 0 6px; font-size: 17px; }
 .confirm-modal p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.payslip-button-blocked { opacity: .62; }
+.payslip-modal-backdrop { padding: 16px; align-items: start; overflow: auto; }
+.payslip-modal { width: min(720px, 100%); margin: auto; display: grid; gap: 12px; padding: 16px; border-radius: 10px; border-top: 3px solid var(--brand-dark); background: #fff; box-shadow: 0 20px 56px rgba(24, 24, 27, .22); }
+.payslip-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.payslip-modal-head h3 { margin: 0 0 2px; font-size: 17px; }
+.payslip-modal-actions { margin-top: 2px; }
+.payslip-sheet { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+.payslip-sheet-bar { height: 8px; background: var(--brand-red); }
+.payslip-sheet-brand { padding: 16px 18px 0; font-size: 17px; font-weight: 700; color: var(--ink); }
+.payslip-sheet-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 18px 12px; border-bottom: 1px solid #ececec; }
+.payslip-sheet-meta strong { color: var(--brand-red); font-size: 11px; letter-spacing: .04em; }
+.payslip-sheet-meta span { color: var(--muted); font-size: 12px; }
+.payslip-sheet-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; padding: 14px 18px; }
+.payslip-sheet-info > div { display: grid; gap: 8px; }
+.payslip-sheet-info > div > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.payslip-sheet-info span { color: var(--muted); font-size: 11px; font-weight: 600; }
+.payslip-sheet-info strong { font-size: 12px; font-weight: 600; color: var(--ink); }
+.payslip-attendance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 18px 14px; padding-top: 4px; border-top: 1px solid #f0f0f0; }
+.payslip-attendance > div { display: grid; gap: 4px; padding-top: 10px; }
+.payslip-attendance span { color: var(--muted); font-size: 10px; }
+.payslip-attendance strong { font-size: 13px; }
+.payslip-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 0 18px 12px; border-top: 1px solid #ececec; padding-top: 14px; }
+.payslip-columns h4, .payslip-employer h4 { margin: 0 0 8px; font-size: 12px; }
+.payslip-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
+.payslip-row-total { margin-top: 6px; padding-top: 6px; border-top: 1px solid #ececec; font-weight: 700; }
+.payslip-employer { padding: 0 18px 10px; color: var(--muted); }
+.payslip-employer .payslip-row { font-size: 11px; }
+.payslip-net { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 18px 14px; padding: 12px 14px; border-radius: 8px; background: #f7f7f8; }
+.payslip-net span { font-size: 13px; font-weight: 700; }
+.payslip-net strong { color: var(--brand-red); font-size: 16px; }
+.payslip-footer { margin: 0; padding: 0 18px 14px; color: var(--muted); font-size: 10px; line-height: 1.4; }
 .capitalize { text-transform: capitalize; }
 .stat-value.compact { margin-top: 16px; font-size: 18px; letter-spacing: -.01em; }
 .exit-progress { margin-left: auto; display: grid; min-width: 110px; text-align: right; }
@@ -434,4 +465,4 @@ tbody tr:hover { background: #fbfcfb; }
 }
 @media (max-width: 1050px) { .exit-layout { grid-template-columns: 1fr; } .side-stack { position: static; } .master-entry-grid { grid-template-columns: repeat(3, 1fr); } .salary-config-details { grid-template-columns: repeat(2, minmax(0, 1fr)); } .payroll-head-create, .payroll-head-edit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settlement-entry { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 1050px) { .profile-review-panel { grid-template-columns: 1fr; align-items: stretch; } .profile-review-approve, .profile-review-return { align-items: stretch; } }
-@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .salary-config-details, .settlement-entry, .inline-form.exit-update, .generated-id-summary, .access-row-form, .owner-access-row { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form, .salary-definition-actions, .salary-calculation-toolbar { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } .salary-create-workspace .salary-definition-table tr { grid-template-columns: 1fr; } .salary-create-workspace .salary-definition-table td:nth-child(3), .salary-create-workspace .salary-definition-table td:nth-child(6) { grid-column: 1; } .salary-config-modal-backdrop { padding: 6px; } .salary-config-modal { width: calc(100vw - 12px); max-height: calc(100vh - 12px); } .salary-config-modal-head, .salary-config-modal-body { padding-left: 13px; padding-right: 13px; } .salary-config-modal-actions { padding: 10px 13px; } }
+@media (max-width: 760px) { .app-layout { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 14px; } .sidebar .brand { margin: 0 0 12px; } .brand-logo { width: 100px; } .brand-product small { display: none; } .sidebar nav { grid-template-columns: repeat(3, 1fr); } .settings-subnav { display: contents; } .nav-link { justify-content: center; } .nav-link span { display: none; } .sidebar-user { display: none; } .content { padding: 26px 16px 48px; } .stats-grid, .settings-directory, .form-grid, .details-grid, .mobile-field, .master-entry-grid, .salary-config-details, .settlement-entry, .inline-form.exit-update, .generated-id-summary, .access-row-form, .owner-access-row, .payslip-sheet-info, .payslip-columns, .payslip-attendance { grid-template-columns: 1fr; } .generated-id-summary p { grid-column: 1; } .page-header { align-items: flex-start; flex-direction: column; } .employee-avatar-card { align-items: flex-start; flex-wrap: wrap; } .employee-avatar-large { width: 76px; height: 76px; } .exit-progress { margin-left: 0; text-align: left; } .workflow-action { grid-template-columns: 1fr 1fr; } .workflow-action input { grid-column: 1 / -1; } .closure-bar, .payroll-head-detail-heading, .payroll-head-status-form, .salary-definition-actions, .salary-calculation-toolbar { align-items: flex-start; flex-direction: column; } .payroll-head-create > .button { margin-top: 0; } .salary-create-workspace .salary-definition-table tr { grid-template-columns: 1fr; } .salary-create-workspace .salary-definition-table td:nth-child(3), .salary-create-workspace .salary-definition-table td:nth-child(6) { grid-column: 1; } .salary-config-modal-backdrop { padding: 6px; } .salary-config-modal { width: calc(100vw - 12px); max-height: calc(100vh - 12px); } .salary-config-modal-head, .salary-config-modal-body { padding-left: 13px; padding-right: 13px; } .salary-config-modal-actions { padding: 10px 13px; } .payslip-modal-backdrop { padding: 6px; } .payslip-modal { width: calc(100vw - 12px); } }

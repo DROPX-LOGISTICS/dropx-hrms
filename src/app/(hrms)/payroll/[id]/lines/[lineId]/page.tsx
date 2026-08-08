@@ -8,8 +8,10 @@ import { SubmitButton } from "@/components/submit-button";
 import { requireHrmsAuth } from "@/lib/auth";
 import { PACKAGE_TYPE_LABELS, PACKAGE_TYPES } from "@/lib/package-types";
 import { can } from "@/lib/permissions";
+import { PayslipPreviewButton } from "@/components/payslip-preview-button";
 import {
   getEffectivePackageRates,
+  getPayslipData,
   getPayrollRunLine,
   getStationLabel,
   listPackageEntriesForLine,
@@ -50,12 +52,11 @@ export default async function PayrollMemberPage({
   const deductions = items.filter((item) => item.component_type === "deduction");
   const employerItems = items.filter((item) => item.component_type === "employer_contribution");
 
-  const [entries, rates] = line.pay_type === "package"
-    ? await Promise.all([
-      listPackageEntriesForLine(auth, line.id),
-      getEffectivePackageRates(auth, line.payee_type, line.payee_id)
-    ])
-    : [[], []];
+  const [entries, rates, payslip] = await Promise.all([
+    line.pay_type === "package" ? listPackageEntriesForLine(auth, line.id) : Promise.resolve([]),
+    line.pay_type === "package" ? getEffectivePackageRates(auth, line.payee_type, line.payee_id) : Promise.resolve([]),
+    getPayslipData(auth, run.id, line.id)
+  ]);
 
   return <>
     <PageHeader
@@ -94,7 +95,31 @@ export default async function PayrollMemberPage({
           <h2>Salary breakup</h2>
           <p className="panel-subtitle">Calculated components for this member.</p>
         </div>
-        {line.status === "calculated" ? <a className="button secondary small" href={`/payroll/${run.id}/payslip/${line.id}`} target="_blank" rel="noopener noreferrer">Payslip</a> : null}
+        <PayslipPreviewButton
+          companyName={auth.companyName}
+          runId={run.id}
+          lineId={line.id}
+          runStatus={run.status}
+          periodMonth={run.period_month}
+          payee={payslip.payee}
+          line={{
+            status: line.status,
+            pay_type: line.pay_type,
+            working_days: line.working_days,
+            present_days: line.present_days,
+            paid_leave_days: line.paid_leave_days,
+            lop_days: line.lop_days,
+            gross_earnings: line.gross_earnings,
+            total_deductions: line.total_deductions,
+            net_pay: line.net_pay,
+            items: items.map((item) => ({
+              id: item.id,
+              component_name: item.component_name,
+              component_type: item.component_type,
+              amount: item.amount
+            }))
+          }}
+        />
       </div>
       <div className="table-wrap">
         <table>
