@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const STORAGE_KEY = "dropx-hrms-auth";
 const CHUNK_SIZE = 3000;
 const MAX_CHUNKS = 8;
 
 export function createServerSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !anonKey) return null;
   const store = cookies();
   const options = {
@@ -21,7 +21,8 @@ export function createServerSupabaseClient() {
   const clear = (key: string) => {
     store.set(key, "", { ...options, maxAge: 0 });
     for (let index = 0; index < MAX_CHUNKS; index += 1) {
-      store.set(`${key}.${index}`, "", { ...options, maxAge: 0 });
+      const name = `${key}.${index}`;
+      if (store.get(name) || index === 0) store.set(name, "", { ...options, maxAge: 0 });
     }
   };
 
@@ -39,6 +40,10 @@ export function createServerSupabaseClient() {
 
   const write = (key: string, value: string) => {
     clear(key);
+    if (value.length <= CHUNK_SIZE) {
+      store.set(key, value, options);
+      return;
+    }
     const chunks = value.match(new RegExp(`.{1,${CHUNK_SIZE}}`, "g")) ?? [];
     chunks.forEach((chunk, index) => store.set(`${key}.${index}`, chunk, options));
   };
@@ -53,10 +58,10 @@ export function createServerSupabaseClient() {
       storage: {
         getItem: (key) => read(key),
         setItem: (key, value) => {
-          try { write(key, value); } catch { /* Middleware refreshes server sessions. */ }
+          try { write(key, value); } catch { /* Cookie mutations can fail outside mutable contexts. */ }
         },
         removeItem: (key) => {
-          try { clear(key); } catch { /* Middleware refreshes server sessions. */ }
+          try { clear(key); } catch { /* Cookie mutations can fail outside mutable contexts. */ }
         }
       }
     }

@@ -90,17 +90,20 @@ export const getHrmsAuth = cache(async (): Promise<HrmsAuthContext | null> => {
   const authClient = createServerSupabaseClient();
   const admin = getSupabaseAdmin();
   if (!authClient || !admin) return null;
-  const { data: authData } = await authClient.auth.getUser();
-  const user = authData.user;
-  if (!user) return null;
-  const access = await loadHrmsAccess(user.id);
-  if (!access) return null;
-  const { permissionCodes, ...details } = access;
-  return {
-    ...details,
-    email: user.email ?? access.email,
-    permissions: new Set<HrmsPermission>(permissionCodes)
-  };
+  try {
+    const { data: authData, error } = await authClient.auth.getUser();
+    if (error || !authData.user) return null;
+    const access = await loadHrmsAccess(authData.user.id);
+    if (!access) return null;
+    const { permissionCodes, ...details } = access;
+    return {
+      ...details,
+      email: authData.user.email ?? access.email,
+      permissions: new Set<HrmsPermission>(permissionCodes)
+    };
+  } catch {
+    return null;
+  }
 });
 
 export async function requireHrmsAuth(permission?: HrmsPermission) {
