@@ -71,6 +71,10 @@ export function EmployeeForm({ action, locations, designations }: Props) {
         <SearchableSelect id="designation_id" name="designation_id" options={filteredDesignations.map((item) => ({ value: item.id, label: item.name }))} value={designationId} placeholder={locationId ? "Search designation" : "Select location first"} disabled={!locationId} required onChange={setDesignationId} />
         {locationId && filteredDesignations.length === 0 ? <span className="field-help error-text">No employee designations are configured for this location.</span> : null}
       </div>
+      <div className="field">
+        <label htmlFor="hr_pay_type">Pay type *</label>
+        <SearchableSelect id="hr_pay_type" name="hr_pay_type" options={[{ value: "monthly", label: "Monthly salary" }, { value: "package", label: "Job / package pay" }]} defaultValue="monthly" placeholder="Search pay type" required />
+      </div>
       <fieldset className="field wide statutory-field">
         <legend>Statutory applicability</legend>
         <div className="tag-select">

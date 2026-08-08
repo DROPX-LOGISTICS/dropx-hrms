@@ -119,4 +119,11 @@ describe("employee salary calculator", () => {
     });
     expect(result.isBalanced).toBe(true);
   });
+
+  it("throws a descriptive, catchable error when no CTC head is configured", () => {
+    const headsWithoutCtc = heads.filter((head) => head.headType !== "ctc");
+    expect(() => reconcileEmployeeSalary(headsWithoutCtc, {
+      [heads[1].payrollHeadId]: 12000
+    })).toThrow("The salary configuration does not contain CTC.");
+  });
 });

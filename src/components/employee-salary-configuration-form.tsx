@@ -160,7 +160,11 @@ export function EmployeeSalaryConfigurationForm({
         return `${head.payrollHeadName} cannot be higher than ${money(head.maximumValue)} monthly.`;
       }
     }
-    return reconcileEmployeeSalary(heads, enteredValues).message;
+    try {
+      return reconcileEmployeeSalary(heads, enteredValues).message;
+    } catch (error) {
+      return error instanceof Error ? error.message : "This salary configuration is missing a CTC component. Contact an administrator.";
+    }
   }, [enteredValues, hasCalculated, heads]);
 
   function setPeriodAmount(headId: string, period: keyof AmountPair, rawValue: string) {
@@ -184,8 +188,13 @@ export function EmployeeSalaryConfigurationForm({
       const inputValues: Record<string, number> = {};
       for (const head of heads.filter((item) => item.calculationType === "input")) {
         const amount = numericAmount(amounts[head.payrollHeadId]?.monthly ?? "");
-        if (amount === null) throw new Error(`Enter a valid Monthly CTC or Yearly CTC for ${head.payrollHeadName}.`);
-        inputValues[head.payrollHeadId] = amount;
+        if (amount !== null) {
+          inputValues[head.payrollHeadId] = amount;
+          continue;
+        }
+        if (head.headType === "ctc") throw new Error(`Enter a valid Monthly CTC or Yearly CTC for ${head.payrollHeadName}.`);
+        // Non-CTC custom amounts are optional at calculation time; they default to 0 and can be filled in manually below.
+        inputValues[head.payrollHeadId] = 0;
       }
       const result = calculateEmployeeSalary(heads, inputValues);
       setAmounts(Object.fromEntries(heads.map((head) => {
@@ -210,7 +219,7 @@ export function EmployeeSalaryConfigurationForm({
     <div className="salary-assignment-heading">
       <div>
         <h3>Salary configuration</h3>
-        <p>Enter monthly or yearly CTC, calculate the breakdown, then correct any flagged component before saving.</p>
+        <p>Enter monthly or yearly CTC, click Calculate breakdown, and every fixed or formula component fills in automatically. Any custom amount defaults to 0 so you can fill it in manually before saving.</p>
       </div>
       {assignment ? <span className="system-badge">Current assignment</span> : <span className="status-pill pending">Not assigned</span>}
     </div>

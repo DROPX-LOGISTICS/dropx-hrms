@@ -13,6 +13,7 @@ export function parseEmployeeForm(formData: FormData): ValidationResult<{
   designationId: string;
   mobileCountryCode: string;
   statutoryApplicability: string[];
+  hrPayType: "monthly" | "package";
 }> {
   const fullName = text(formData.get("full_name"));
   const mobile = text(formData.get("mobile")).replace(/\D/g, "");
@@ -25,6 +26,7 @@ export function parseEmployeeForm(formData: FormData): ValidationResult<{
   const statutoryApplicability = requestedStatutory.includes("not_applicable") || requestedStatutory.length === 0
     ? ["not_applicable"]
     : [...new Set(requestedStatutory)];
+  const hrPayType = text(formData.get("hr_pay_type")) === "package" ? "package" : "monthly";
   if (fullName.length < 2) return { ok: false, error: "Full name must contain at least two characters." };
   if (!/^\d{6,15}$/.test(mobile)) return { ok: false, error: "Mobile number must contain 6 to 15 digits." };
   if (!/^\d{1,4}$/.test(mobileCountryCode)) return { ok: false, error: "Select a valid mobile country code." };
@@ -42,7 +44,8 @@ export function parseEmployeeForm(formData: FormData): ValidationResult<{
       locationId,
       designationId,
       mobileCountryCode,
-      statutoryApplicability
+      statutoryApplicability,
+      hrPayType
     }
   };
 }

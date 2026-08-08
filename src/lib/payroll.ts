@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { HrmsAuthContext } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -48,10 +49,10 @@ function db() {
   return supabaseAdmin;
 }
 
-export async function loadPayrollSettings(auth: HrmsAuthContext) {
+const getCachedPayrollSettings = unstable_cache(async (companyId: string) => {
   const [headsResult, configurationsResult] = await Promise.all([
-    db().from("hr_payroll_heads").select("id, code, name, head_type, is_system, display_order, is_active").eq("company_id", auth.companyId).order("display_order").order("name"),
-    db().from("hr_salary_configurations").select("id, code, name, description, effective_from, effective_to, annualisation_factor, is_default, is_active, hr_salary_configuration_items(id, payroll_head_id, calculation_type, formula, fixed_amount, value_expression, minimum_value, maximum_value, is_enabled, display_order, hr_payroll_heads(id, code, name, head_type, is_system, display_order, is_active))").eq("company_id", auth.companyId).order("created_at", { ascending: false })
+    db().from("hr_payroll_heads").select("id, code, name, head_type, is_system, display_order, is_active").eq("company_id", companyId).order("display_order").order("name"),
+    db().from("hr_salary_configurations").select("id, code, name, description, effective_from, effective_to, annualisation_factor, is_default, is_active, hr_salary_configuration_items(id, payroll_head_id, calculation_type, formula, fixed_amount, value_expression, minimum_value, maximum_value, is_enabled, display_order, hr_payroll_heads(id, code, name, head_type, is_system, display_order, is_active))").eq("company_id", companyId).order("created_at", { ascending: false })
   ]);
   const error = headsResult.error ?? configurationsResult.error;
   if (error) throw new Error(error.message);
@@ -68,4 +69,8 @@ export async function loadPayrollSettings(auth: HrmsAuthContext) {
       .sort((a, b) => a.display_order - b.display_order);
   }
   return { heads, configurations };
+}, ["hrms-payroll-settings-v1"], { revalidate: 30 });
+
+export async function loadPayrollSettings(auth: HrmsAuthContext) {
+  return getCachedPayrollSettings(auth.companyId);
 }

@@ -11,7 +11,7 @@ describe("parseEmployeeForm", () => {
   const valid = { full_name: "Asha Nair", mobile: "9876543210", mobile_country_code: "91", email: "asha@example.com", date_of_join: "2026-07-20", location_id: "station-1", designation_id: "role-1" };
   it("normalizes valid employee input", () => {
     const result = parseEmployeeForm(form(valid));
-    expect(result).toEqual({ ok: true, value: { fullName: "Asha Nair", mobile: "9876543210", mobileCountryCode: "91", email: "asha@example.com", dateOfJoin: "2026-07-20", locationId: "station-1", designationId: "role-1", statutoryApplicability: ["not_applicable"] } });
+    expect(result).toEqual({ ok: true, value: { fullName: "Asha Nair", mobile: "9876543210", mobileCountryCode: "91", email: "asha@example.com", dateOfJoin: "2026-07-20", locationId: "station-1", designationId: "role-1", statutoryApplicability: ["not_applicable"], hrPayType: "monthly" } });
   });
   it("accepts empty optional employee fields and strips mobile punctuation", () => {
     const result = parseEmployeeForm(form({ ...valid, mobile: "+91 98765-43210", email: "", designation_id: "role-1" }));

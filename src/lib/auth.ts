@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -15,6 +16,14 @@ export type HrmsAuthContext = {
   locationIds: string[];
   allLocations: boolean;
 };
+
+export type HrmsAuthClientContext = Omit<HrmsAuthContext, "permissions"> & {
+  permissions: HrmsPermission[];
+};
+
+export function toClientAuth(auth: HrmsAuthContext): HrmsAuthClientContext {
+  return { ...auth, permissions: [...auth.permissions] };
+}
 
 function isMissingTable(error: unknown) {
   const message = String((error as { message?: unknown })?.message ?? "").toLowerCase();
@@ -73,11 +82,12 @@ const getCachedHrmsAccess = unstable_cache(async (userId: string) => {
   };
 }, ["hrms-access-v1"], { revalidate: 15 });
 
-export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
+export const getHrmsAuth = cache(async (): Promise<HrmsAuthContext | null> => {
   const authClient = createServerSupabaseClient();
   if (!authClient || !supabaseAdmin) return null;
   const { data: authData } = await authClient.auth.getUser();
   const user = authData.user;
+  // console.log("user", user);
   if (!user) return null;
   const access = await getCachedHrmsAccess(user.id);
   if (!access) return null;
@@ -87,7 +97,7 @@ export async function getHrmsAuth(): Promise<HrmsAuthContext | null> {
     email: user.email ?? access.email,
     permissions: new Set<HrmsPermission>(permissionCodes)
   };
-}
+});
 
 export async function requireHrmsAuth(permission?: HrmsPermission) {
   const context = await getHrmsAuth();

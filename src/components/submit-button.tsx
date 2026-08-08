@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
 type SubmitButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
@@ -13,13 +13,16 @@ export function isCurrentFormAction(data: FormData | null, name?: string, value?
   return String(data?.get(name) ?? "") === String(value ?? "");
 }
 
-export function SubmitButton({ children, disabled, name, pendingLabel = "Working…", value, ...props }: SubmitButtonProps) {
+export const SubmitButton = forwardRef<HTMLButtonElement, SubmitButtonProps>(function SubmitButton(
+  { children, disabled, name, pendingLabel = "Working…", value, ...props },
+  ref
+) {
   const { data, pending } = useFormStatus();
   const showPending = pending && isCurrentFormAction(data, name, value);
 
   return (
-    <button {...props} aria-busy={showPending || undefined} disabled={disabled || pending} name={name} type="submit" value={value}>
+    <button {...props} ref={ref} aria-busy={showPending || undefined} disabled={disabled || pending} name={name} type="submit" value={value}>
       {showPending ? <><span aria-hidden="true" className="loading-spinner" />{pendingLabel}</> : children}
     </button>
   );
-}
+});

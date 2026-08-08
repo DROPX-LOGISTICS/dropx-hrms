@@ -9,6 +9,8 @@ export const hrmsPermissions = [
   "exit.view",
   "exit.manage",
   "exit.approve",
+  "payroll.view",
+  "payroll.process",
   "settings.manage"
 ] as const;
 
@@ -38,6 +40,7 @@ export function permissionsForRole(roleCode: string | null | undefined, masterOw
   return new Set<HrmsPermission>(rolePermissions[String(roleCode ?? "").trim().toUpperCase()] ?? []);
 }
 
-export function can(permissionSet: Set<HrmsPermission>, permission: HrmsPermission) {
-  return permissionSet.has(permission);
+export function can(permissionSet: ReadonlySet<HrmsPermission> | readonly HrmsPermission[], permission: HrmsPermission) {
+  if (Array.isArray(permissionSet)) return permissionSet.includes(permission);
+  return (permissionSet as ReadonlySet<HrmsPermission>).has(permission);
 }

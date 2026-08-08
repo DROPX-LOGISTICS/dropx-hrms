@@ -15,6 +15,7 @@ const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map
 const stateOptions = ["AP", "AR", "AS", "BR", "CG", "GA", "GJ", "HR", "HP", "JH", "KA", "KL", "MP", "MH", "MN", "ML", "MZ", "NL", "OD", "PB", "RJ", "SK", "TN", "TS", "TR", "UP", "UK", "WB", "AN", "CH", "DN", "DL", "JK", "LA", "LD", "PY"].map((value) => ({ value, label: value }));
 const yesNoOptions = [{ value: "false", label: "No" }, { value: "true", label: "Yes" }];
 const statusOptions = [{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }];
+const payTypeOptions = [{ value: "monthly", label: "Monthly salary" }, { value: "package", label: "Job / package pay" }];
 
 function ExistingDocument({ label, url }: { label: string; url?: string | null }) {
   return <span className="field-help">{url ? <a href={url} target="_blank" rel="noreferrer">View current {label}</a> : `No ${label} uploaded`}</span>;
@@ -61,6 +62,7 @@ export function EmployeeEditForm({ action, employee, locations, designations, ru
       <div className="field"><label htmlFor="edit_status">Status</label><SearchableSelect id="edit_status" name="is_active" options={statusOptions} defaultValue={employee.is_active ? "true" : "false"} placeholder="Search status" required /></div>
       <div className="field"><label htmlFor="edit_location_id">Location *</label><SearchableSelect id="edit_location_id" name="location_id" options={locations.map((item) => ({ value: item.id, label: `${item.station_code} · ${item.station_name ?? "Unnamed location"}` }))} value={locationId} placeholder="Search location" required onChange={(next) => { setLocationId(next); setDesignationId(""); }} /></div>
       <div className="field"><label htmlFor="edit_designation_id">Designation *</label><SearchableSelect id="edit_designation_id" name="designation_id" options={effectiveDesignations.map((item) => ({ value: item.id, label: item.name, helper: item.code }))} value={designationId} placeholder={locationId ? "Search designation" : "Select location first"} disabled={!locationId} required onChange={setDesignationId} /></div>
+      <div className="field"><label htmlFor="edit_hr_pay_type">Pay type *</label><SearchableSelect id="edit_hr_pay_type" name="hr_pay_type" options={payTypeOptions} defaultValue={employee.hr_pay_type ?? "monthly"} placeholder="Search pay type" required /><small>Package pay is settled through job/package entries in Salary Process instead of a fixed monthly structure.</small></div>
       <fieldset className="field wide statutory-field"><legend>Statutory applicability</legend><div className="tag-select">{[{ value: "not_applicable", label: "Not Applicable" }, { value: "pf", label: "PF" }, { value: "esi", label: "ESI" }].map((item) => <button key={item.value} type="button" className={statutory.includes(item.value) ? "selected" : ""} aria-pressed={statutory.includes(item.value)} onClick={() => toggleStatutory(item.value)}>{item.label}</button>)}</div>{statutory.map((item) => <input key={item} type="hidden" name="statutory_applicability" value={item} />)}</fieldset>
 
       <h3 className="wide form-section-title">Personal and contact</h3>

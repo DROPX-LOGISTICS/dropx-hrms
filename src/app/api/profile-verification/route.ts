@@ -118,6 +118,7 @@ async function workforceAccount(accountId: string, profileType: WorkforceProfile
 }
 
 async function idspayCredentials(companyId: string) {
+  // console.log("idspayCredentials", companyId);
   if (!supabaseAdmin) throw new Error("Database configuration is missing.");
   const settings = await supabaseAdmin
     .from("verification_api_settings")
@@ -125,14 +126,15 @@ async function idspayCredentials(companyId: string) {
     .eq("company_id", companyId)
     .eq("provider_code", "idspay")
     .maybeSingle();
+  console.log("settings", settings);
   if (settings.error) throw new Error(settings.error.message);
   if (!settings.data?.is_enabled) throw new Error("IDSPAY verification API is not enabled in Dashboard settings.");
   const [apiKey, tokenId] = await Promise.all([
     supabaseAdmin.rpc("get_verification_api_secret", { company_uuid: companyId, provider: "idspay", secret_kind: "api_key" }),
     supabaseAdmin.rpc("get_verification_api_secret", { company_uuid: companyId, provider: "idspay", secret_kind: "token_id" })
   ]);
-  if (apiKey.error) throw new Error(apiKey.error.message);
-  if (tokenId.error) throw new Error(tokenId.error.message);
+  if (apiKey.error) throw new Error(apiKey.error.message),console.log(apiKey.error);
+  if (tokenId.error) throw new Error(tokenId.error.message),console.log(tokenId.error);
   return { api_id: text(settings.data.api_id), api_key: text(apiKey.data), token_id: text(tokenId.data) };
 }
 

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { useFormState } from "react-dom";
 import { createPortal } from "react-dom";
 import { EllipsisVertical, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
-import { createSalaryConfiguration, saveSalaryConfiguration } from "@/app/settings/salary/actions";
+import { createSalaryConfiguration, deleteSalaryConfiguration, saveSalaryConfiguration } from "@/app/(hrms)/settings/salary/actions";
+import { FormFeedback } from "@/components/form-feedback";
 import { SearchableSelect } from "@/components/searchable-select";
 import { SubmitButton } from "@/components/submit-button";
+import { initialActionFeedback } from "@/lib/action-feedback";
 import {
   buildPayrollValueExpression,
   payrollValueMethodState
@@ -48,11 +51,11 @@ const componentGroups: Array<{
   title: string;
   description: string;
 }> = [
-  { headType: "employee_earning", title: "Employee Earnings", description: "Salary and allowance components paid to the employee." },
-  { headType: "employee_deduction", title: "Employee Deductions", description: "Company-defined amounts deducted from the employee." },
-  { headType: "statutory_contribution", title: "Statutory Contributions", description: "Employer statutory contributions included in CTC." },
-  { headType: "statutory_deduction", title: "Statutory Deductions", description: "Employee statutory deductions included in the salary structure." }
-];
+    { headType: "employee_earning", title: "Employee Earnings", description: "Salary and allowance components paid to the employee." },
+    { headType: "employee_deduction", title: "Employee Deductions", description: "Company-defined amounts deducted from the employee." },
+    { headType: "statutory_contribution", title: "Statutory Contributions", description: "Employer statutory contributions included in CTC." },
+    { headType: "statutory_deduction", title: "Statutory Deductions", description: "Employee statutory deductions included in the salary structure." }
+  ];
 
 const methodOptions = [
   { value: "input", label: "Employee-specific amount" },
@@ -117,6 +120,23 @@ function expressionForRow(row: EditorRow) {
     percentage: row.percentage,
     advancedFormula: row.advancedFormula
   });
+}
+
+function editorStateSignature(name: string, rows: EditorRow[]) {
+  return JSON.stringify({
+    name: name.trim(),
+    rows: rows.map((row) => ({
+      payrollHeadId: row.payrollHeadId,
+      headType: row.headType,
+      expression: expressionForRow(row),
+      minimumValue: row.minimumValue.trim(),
+      maximumValue: row.maximumValue.trim()
+    }))
+  });
+}
+
+function isEditorDirty(name: string, rows: EditorRow[], baseline: { name: string; rows: EditorRow[] }) {
+  return editorStateSignature(name, rows) !== editorStateSignature(baseline.name, baseline.rows);
 }
 
 function SalaryComponentGroupRows({
@@ -347,7 +367,14 @@ function SalaryComponentRows({
 
 export function CreateSalaryConfigurationEditor({ heads }: { heads: PayrollHeadRow[] }) {
   const [rows, setRows] = useState<EditorRow[]>(() => [ctcRow(heads)]);
-  return <form action={createSalaryConfiguration} className="salary-create-form">
+  const [state, formAction] = useFormState(createSalaryConfiguration, initialActionFeedback);
+
+  useEffect(() => {
+    if (state.notice) setRows([ctcRow(heads)]);
+  }, [state.notice, heads]);
+
+  return <form action={formAction} className="salary-create-form">
+    <FormFeedback state={state} />
     <div className="master-entry-grid salary-config-details">
       <div className="field"><label htmlFor="salary-configuration-code">Configuration code *</label><input id="salary-configuration-code" name="code" placeholder="MONTHLY_STAFF" required /><small>Permanent reference code.</small></div>
       <div className="field"><label htmlFor="salary-configuration-name">Configuration name *</label><input id="salary-configuration-name" name="name" placeholder="Monthly Staff Salary" required /></div>
@@ -362,10 +389,12 @@ export function CreateSalaryConfigurationEditor({ heads }: { heads: PayrollHeadR
 
 function SalaryConfigurationActionsMenu({
   configuration,
-  onSelect
+  onSelect,
+  onDelete
 }: {
   configuration: SalaryConfigurationRow;
   onSelect: (mode: "view" | "edit") => void;
+  onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
@@ -391,7 +420,7 @@ function SalaryConfigurationActionsMenu({
     if (open) return setOpen(false);
     const bounds = rootRef.current?.getBoundingClientRect();
     if (bounds) {
-      const menuHeight = 82;
+      const menuHeight = 123;
       const top = bounds.bottom + menuHeight + 8 <= window.innerHeight
         ? bounds.bottom + 5
         : Math.max(8, bounds.top - menuHeight - 5);
@@ -426,10 +455,70 @@ function SalaryConfigurationActionsMenu({
       >
         <button role="menuitem" type="button" onClick={() => select("view")}><Eye size={15} />View</button>
         <button role="menuitem" type="button" onClick={() => select("edit")}><Pencil size={15} />Edit</button>
+        <button
+          role="menuitem"
+          type="button"
+          className="row-actions-danger"
+          onClick={() => {
+            setOpen(false);
+            onDelete();
+          }}
+        >
+          <Trash2 size={15} />Delete
+        </button>
       </div>,
       document.body
     ) : null}
   </div>;
+}
+
+function SalaryConfigurationDeleteConfirm({
+  configuration,
+  onCancel,
+  onDeleted
+}: {
+  configuration: SalaryConfigurationRow;
+  onCancel: () => void;
+  onDeleted: () => void;
+}) {
+  const [state, formAction] = useFormState(deleteSalaryConfiguration, initialActionFeedback);
+  const cannotDelete = configuration.is_default;
+
+  useEffect(() => {
+    if (!state.notice) return;
+    onDeleted();
+  }, [state, onDeleted]);
+
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onCancel]);
+
+  return createPortal(
+    <div className="modal-backdrop salary-config-modal-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onCancel();
+    }}>
+      <div className="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="salary-configuration-delete-title">
+        <h3 id="salary-configuration-delete-title">Delete salary configuration?</h3>
+        <p>
+          This permanently removes <strong>{configuration.name}</strong> (<code>{configuration.code}</code>) and its component rules. This action cannot be undone.
+        </p>
+        {cannotDelete ? <p className="field-help error-text">The default salary configuration cannot be deleted.</p> : null}
+        <FormFeedback state={state} />
+        <form action={formAction} className="salary-configuration-delete-form">
+          <input name="configuration_id" type="hidden" value={configuration.id} />
+          <div className="form-actions">
+            <button className="button secondary" type="button" onClick={onCancel}>Cancel</button>
+            <SubmitButton className="button danger" disabled={cannotDelete} pendingLabel="Deleting salary configuration…">Delete configuration</SubmitButton>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 function SalaryConfigurationModal({
@@ -443,9 +532,27 @@ function SalaryConfigurationModal({
   mode: "view" | "edit";
   onClose: () => void;
 }) {
-  const [rows, setRows] = useState<EditorRow[]>(() => initialRows(configuration, heads));
+  const initialEditorRows = useMemo(() => initialRows(configuration, heads), [configuration, heads]);
+  const [rows, setRows] = useState<EditorRow[]>(() => initialEditorRows);
+  const [configurationName, setConfigurationName] = useState(configuration.name);
+  const [baseline, setBaseline] = useState(() => ({
+    name: configuration.name,
+    rows: initialEditorRows
+  }));
+  const [state, formAction] = useFormState(saveSalaryConfiguration, initialActionFeedback);
   const readOnly = mode === "view";
   const titleId = `salary-configuration-${mode}-title`;
+  const isDirty = !readOnly && isEditorDirty(configurationName, rows, baseline);
+
+  useEffect(() => {
+    if (!state.notice) return;
+    setBaseline({
+      name: configurationName,
+      rows: rows.map((row) => ({ ...row }))
+    });
+    // Reset dirty baseline when the server action returns success.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- capture editor values at save completion
+  }, [state]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -473,7 +580,8 @@ function SalaryConfigurationModal({
           </div>
           <button className="modal-close-button" type="button" aria-label="Close salary configuration" onClick={onClose}><X size={19} /></button>
         </div>
-        <form action={readOnly ? undefined : saveSalaryConfiguration} onSubmit={readOnly ? (event) => event.preventDefault() : undefined}>
+        <form action={readOnly ? undefined : formAction} onSubmit={readOnly ? (event) => event.preventDefault() : undefined}>
+          <FormFeedback state={state} />
           <div className="salary-config-modal-body">
             <input name="configuration_id" type="hidden" value={configuration.id} />
             <div className="master-entry-grid salary-config-details salary-config-modal-details">
@@ -484,14 +592,21 @@ function SalaryConfigurationModal({
               </div>
               <div className="field">
                 <label htmlFor={`${configuration.id}-${mode}-name`}>Configuration name *</label>
-                <input id={`${configuration.id}-${mode}-name`} name="configuration_name" defaultValue={configuration.name} disabled={readOnly} required />
+                <input
+                  id={`${configuration.id}-${mode}-name`}
+                  name="configuration_name"
+                  value={configurationName}
+                  onChange={(event) => setConfigurationName(event.target.value)}
+                  disabled={readOnly}
+                  required
+                />
               </div>
             </div>
             <SalaryComponentRows heads={heads} idPrefix={`${configuration.id}-${mode}`} rows={rows} setRows={setRows} readOnly={readOnly} />
           </div>
           <div className="salary-config-modal-actions">
             <button className="button secondary" type="button" onClick={onClose}>{readOnly ? "Close" : "Cancel"}</button>
-            {!readOnly ? <SubmitButton className="button primary" pendingLabel="Saving salary configuration…">Save configuration</SubmitButton> : null}
+            {!readOnly ? <SubmitButton className="button primary" disabled={!isDirty} pendingLabel="Saving salary configuration…">Save configuration</SubmitButton> : null}
           </div>
         </form>
       </div>
@@ -508,11 +623,22 @@ export function SalaryConfigurationList({
   heads: PayrollHeadRow[];
 }) {
   const [selection, setSelection] = useState<ModalSelection | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SalaryConfigurationRow | null>(null);
   const modalSequence = useRef(0);
 
   function open(configuration: SalaryConfigurationRow, mode: "view" | "edit") {
     modalSequence.current += 1;
+    setDeleteTarget(null);
     setSelection({ configuration, mode, instance: modalSequence.current });
+  }
+
+  function openDelete(configuration: SalaryConfigurationRow) {
+    setSelection((current) => (current?.configuration.id === configuration.id ? null : current));
+    setDeleteTarget(configuration);
+  }
+
+  function closeDelete() {
+    setDeleteTarget(null);
   }
 
   if (!configurations.length) return <div className="alert">No salary configuration exists. Create the first complete configuration above.</div>;
@@ -530,7 +656,7 @@ export function SalaryConfigurationList({
               <td>{componentCount} {componentCount === 1 ? "component" : "components"}</td>
               <td>{configuration.is_default ? <span className="system-badge">Default</span> : <span className="muted-table-value">—</span>}</td>
               <td><span className={`status-pill ${configuration.is_active ? "active" : "inactive"}`}>{configuration.is_active ? "Active" : "Inactive"}</span></td>
-              <td><SalaryConfigurationActionsMenu configuration={configuration} onSelect={(mode) => open(configuration, mode)} /></td>
+              <td><SalaryConfigurationActionsMenu configuration={configuration} onSelect={(mode) => open(configuration, mode)} onDelete={() => openDelete(configuration)} /></td>
             </tr>;
           })}
         </tbody>
@@ -542,6 +668,12 @@ export function SalaryConfigurationList({
       heads={heads}
       mode={selection.mode}
       onClose={() => setSelection(null)}
+    /> : null}
+    {deleteTarget ? <SalaryConfigurationDeleteConfirm
+      key={deleteTarget.id}
+      configuration={deleteTarget}
+      onCancel={closeDelete}
+      onDeleted={closeDelete}
     /> : null}
   </>;
 }

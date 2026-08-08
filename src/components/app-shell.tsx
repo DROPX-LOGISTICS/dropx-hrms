@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, CalendarCheck2, CalendarDays, CheckSquare2, CircleDollarSign, DoorOpen, ListTree, Settings2, UserCog, Users2 } from "lucide-react";
-import { HrmsAuthContext } from "@/lib/auth";
+import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, CalendarCheck2, CalendarDays, CheckSquare2, CircleDollarSign, DoorOpen, ListTree, Receipt, Settings2, UserCog, Users2, Wallet } from "lucide-react";
+import type { HrmsAuthClientContext } from "@/lib/auth";
+import { activeNavLabel } from "@/lib/nav-active";
 import { can } from "@/lib/permissions";
 import { signOut } from "@/app/login/actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -12,7 +16,8 @@ const mainNav = [
   { href: "/attendance", label: "Attendance", permission: "attendance.view" as const, icon: CalendarCheck2 },
   { href: "/leave", label: "Leave", permission: "leave.view" as const, icon: CalendarCheck2 },
   { href: "/approvals", label: "Approvals", permission: "leave.approve" as const, icon: CheckSquare2 },
-  { href: "/exits", label: "Exit Management", permission: "exit.view" as const, icon: DoorOpen }
+  { href: "/exits", label: "Exit Management", permission: "exit.view" as const, icon: DoorOpen },
+  { href: "/payroll", label: "Salary Process", permission: "payroll.view" as const, icon: Wallet }
 ];
 
 const settingsNav = [
@@ -21,12 +26,28 @@ const settingsNav = [
   { href: "/settings/payroll-heads", label: "Payroll Heads", icon: ListTree },
   { href: "/settings/leave-policy", label: "Leave Policy", icon: CalendarDays },
   { href: "/settings/salary", label: "Salary Configuration", icon: CircleDollarSign },
+  { href: "/settings/statutory", label: "Statutory Settings", icon: Receipt },
   { href: "/settings/exit", label: "Exit Masters", icon: DoorOpen }
 ];
 
-export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; active: string; children: React.ReactNode }) {
+export function AppShell({ auth, children, contentPending = false }: { auth: HrmsAuthClientContext; children: React.ReactNode; contentPending?: boolean }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const active = activeNavLabel(pathname);
+
+  function prefetchOnHover(href: string) {
+    return () => router.prefetch(href);
+  }
+
   return (
-    <div className="app-layout">
+    <div className={contentPending ? "app-layout app-layout-pending" : "app-layout"} aria-busy={contentPending || undefined}>
+      {contentPending ? (
+        <div className="app-loading-overlay" aria-hidden="true">
+          <div className="app-loading-dots" role="status" aria-label="Loading">
+            <span /><span /><span />
+          </div>
+        </div>
+      ) : null}
       <aside className="sidebar">
         <Link className="brand" href="/">
           <Image className="brand-logo" src="/dropx-logo.png" alt="DropX" width={112} height={42} priority />
@@ -35,14 +56,14 @@ export function AppShell({ auth, active, children }: { auth: HrmsAuthContext; ac
         <nav aria-label="HRMS navigation">
           {mainNav.filter((item) => can(auth.permissions, item.permission)).map((item) => {
             const Icon = item.icon;
-            return <Link key={item.href} className={active === item.label ? "nav-link active" : "nav-link"} href={item.href}><Icon size={16} /><span>{item.label}</span></Link>;
+            return <Link key={item.href} className={active === item.label ? "nav-link active" : "nav-link"} href={item.href} prefetch={false} onMouseEnter={prefetchOnHover(item.href)} onFocus={prefetchOnHover(item.href)}><Icon size={16} /><span>{item.label}</span></Link>;
           })}
           {can(auth.permissions, "settings.manage") ? <>
-            <Link className={active === "Settings" || settingsNav.some((item) => item.label === active) ? "nav-link section-active" : "nav-link"} href="/settings"><Settings2 size={16} /><span>Settings</span></Link>
+            <Link className={active === "Settings" || settingsNav.some((item) => item.label === active) ? "nav-link section-active" : "nav-link"} href="/settings" prefetch={false} onMouseEnter={prefetchOnHover("/settings")} onFocus={prefetchOnHover("/settings")}><Settings2 size={16} /><span>Settings</span></Link>
             <div className="settings-subnav">
               {settingsNav.map((item) => {
                 const Icon = item.icon;
-                return <Link key={item.href} className={active === item.label ? "nav-link sub-nav-link active" : "nav-link sub-nav-link"} href={item.href}><Icon size={14} /><span>{item.label}</span></Link>;
+                return <Link key={item.href} className={active === item.label ? "nav-link sub-nav-link active" : "nav-link sub-nav-link"} href={item.href} prefetch={false} onMouseEnter={prefetchOnHover(item.href)} onFocus={prefetchOnHover(item.href)}><Icon size={14} /><span>{item.label}</span></Link>;
               })}
             </div>
           </> : null}
