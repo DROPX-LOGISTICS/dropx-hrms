@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
           try {
             writeAuthStorage(request, response, key, value, secure);
           } catch {
-            /* Cookie writes can fail in edge contexts; page auth still validates. */
+            /* ignore */
           }
         },
         removeItem: (key) => {
@@ -109,9 +109,18 @@ export async function middleware(request: NextRequest) {
   });
 
   try {
-    // Stale/corrupt refresh tokens must not crash the Worker with a 500 on `/`.
-    const { data, error } = await client.auth.getSession();
-    if (error || !data.session) return redirectToLogin(request, Boolean(error || hasStoredSession));
+    // getSession() only reads storage and can "succeed" with a junk JWT.
+    // Validate with getUser() so invalid cookies never reach RSC (where redirect() 500s on Workers).
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      return redirectToLogin(request, Boolean(sessionError || hasStoredSession));
+    }
+
+    const { data: userData, error: userError } = await client.auth.getUser();
+    if (userError || !userData.user) {
+      return redirectToLogin(request, true);
+    }
+
     return response;
   } catch {
     return redirectToLogin(request, true);

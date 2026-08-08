@@ -1,14 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ClientRedirect } from "@/components/client-redirect";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
-import { requireHrmsAuth } from "@/lib/auth";
+import { getHrmsAuth } from "@/lib/auth";
 import { loadOverview } from "@/lib/data";
+import { can } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Overview" };
 export default async function OverviewPage() {
-  const auth = await requireHrmsAuth("overview.view");
-  const data = await loadOverview(auth);
+  const auth = await getHrmsAuth();
+  if (!auth) return <ClientRedirect href="/login?reason=HRMS%20access%20is%20not%20configured" />;
+  if (!can(auth.permissions, "overview.view")) return <ClientRedirect href="/unauthorized" />;
+
+  let data: Awaited<ReturnType<typeof loadOverview>>;
+  try {
+    data = await loadOverview(auth);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load overview.";
+    return (
+      <>
+        <PageHeader eyebrow="People operations" title="Overview unavailable" description="The dashboard could not load workforce metrics." />
+        <div className="alert error" role="alert">{message}</div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader eyebrow="People operations" title="Good day, let’s run HR." description={`Live workforce position for ${data.today}.`} action={<Link className="button primary" href="/people">Open people directory</Link>} />

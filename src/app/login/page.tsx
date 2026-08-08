@@ -1,20 +1,25 @@
-import { redirect } from "next/navigation";
 import Image from "next/image";
-import { SubmitButton } from "@/components/submit-button";
+import { ClientRedirect } from "@/components/client-redirect";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getHrmsAuth } from "@/lib/auth";
-import { signOut } from "./actions";
 
 export default async function LoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
   const client = createServerSupabaseClient();
-  const { data } = client ? await client.auth.getUser() : { data: { user: null } };
-  const hrmsAuth = data.user ? await getHrmsAuth() : null;
+  let user = null as { email?: string | null } | null;
+  try {
+    const { data } = client ? await client.auth.getUser() : { data: { user: null } };
+    user = data.user;
+  } catch {
+    user = null;
+  }
+  const hrmsAuth = user ? await getHrmsAuth() : null;
 
   // Only enter the app when HRMS access is granted. Otherwise stay here with Sign out
   // (avoids login ↔ dashboard redirect loop).
-  if (data.user && hrmsAuth) {
+  if (user && hrmsAuth) {
     const next = searchParams?.next;
-    redirect(next && next.startsWith("/") ? next : "/");
+    const href = next && next.startsWith("/") ? next : "/";
+    return <ClientRedirect href={href} />;
   }
 
   const nextPath = searchParams?.next && searchParams.next.startsWith("/") ? searchParams.next : "/";
@@ -30,14 +35,14 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
         <h1>People operations, in one place.</h1>
         <p className="auth-copy">Secure HRMS for employees, attendance, leave and approvals.</p>
         {searchParams?.reason ? <div className="alert error" role="alert">{searchParams.reason}</div> : null}
-        {data.user ? (
+        {user ? (
           <>
             <p className="auth-copy">
-              Signed in as <strong>{data.user.email}</strong>, but this account is not linked for HRMS yet.
+              Signed in as <strong>{user.email}</strong>, but this account is not linked for HRMS yet.
               Ask an admin to grant access, then sign out and sign in again.
             </p>
-            <form action={signOut}>
-              <SubmitButton className="button secondary full" pendingLabel="Signing out…">Sign out</SubmitButton>
+            <form action="/auth/signout" method="get">
+              <button className="button secondary full" type="submit">Sign out</button>
             </form>
           </>
         ) : (

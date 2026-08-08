@@ -108,7 +108,10 @@ export const getHrmsAuth = cache(async (): Promise<HrmsAuthContext | null> => {
 
 export async function requireHrmsAuth(permission?: HrmsPermission) {
   const context = await getHrmsAuth();
-  if (!context) redirect("/login?reason=HRMS%20access%20is%20not%20configured");
+  if (!context) {
+    // Prefer middleware for unauthenticated users. This path is a fallback for pages/actions.
+    redirect("/login?reason=HRMS%20access%20is%20not%20configured");
+  }
   if (permission && !can(context.permissions, permission)) redirect("/unauthorized");
   return context;
 }
