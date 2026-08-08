@@ -1,7 +1,9 @@
 node_modules/
 .next/
+.open-next/
 coverage/
 .vercel/
+.dev.vars
 .env
 .env.local
 .env.*.local
@@ -9,3 +11,4 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 package-lock.json
+wrangler.toml.bak

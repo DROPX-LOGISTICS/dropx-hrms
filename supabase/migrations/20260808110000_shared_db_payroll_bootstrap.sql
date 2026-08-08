@@ -1,6 +1,10 @@
+-- One-shot bootstrap for the shared DropX Supabase project.
+-- Paste this entire file into Supabase → SQL Editor and run once.
+-- Safe to re-run (IF NOT EXISTS / OR REPLACE / IF EXISTS guards).
+
 begin;
 
--- Ensure helper exists (shared DBs may not have run full hrms_foundation).
+-- Required by payroll triggers (normally created by hrms_foundation).
 create or replace function public.hr_touch_updated_at()
 returns trigger
 language plpgsql
@@ -12,8 +16,10 @@ begin
 end;
 $$;
 
--- Pay type discriminator: distinguishes monthly-salaried employees from
--- employees who are paid per job / package (same model contractors use).
+-- ---------------------------------------------------------------------------
+-- From 20260730100000_hr_payroll_process.sql
+-- ---------------------------------------------------------------------------
+
 alter table public.employees
   add column if not exists hr_pay_type text not null default 'monthly';
 
@@ -27,8 +33,6 @@ create index if not exists employees_hr_pay_type_idx
   on public.employees(company_id, hr_pay_type)
   where is_active;
 
--- Configurable statutory parameters (PF / ESI / Professional Tax / TDS) used
--- by the Salary Process calculation engine. One row per company.
 create table if not exists public.hr_statutory_settings (
   company_id uuid primary key references public.companies(id) on delete cascade,
   pf_enabled boolean not null default true,
@@ -55,7 +59,6 @@ insert into public.hr_statutory_settings(company_id)
 select id from public.companies where is_active
 on conflict (company_id) do nothing;
 
--- Payroll runs: one per company per calendar month.
 create table if not exists public.hr_payroll_runs (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -82,8 +85,6 @@ create unique index if not exists hr_payroll_runs_company_period_idx
 create index if not exists hr_payroll_runs_company_status_idx
   on public.hr_payroll_runs(company_id, status, period_month desc);
 
--- Ad-hoc job / package pay entries. Used for independent contractors and for
--- any employee whose hr_pay_type is 'package' instead of 'monthly'.
 create table if not exists public.hr_pay_packages (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -112,7 +113,6 @@ create index if not exists hr_pay_packages_unclaimed_idx
   on public.hr_pay_packages(company_id, payee_type, payee_id, job_date)
   where status = 'approved' and payroll_run_id is null;
 
--- One row per payee included in a run.
 create table if not exists public.hr_payroll_run_lines (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -144,8 +144,6 @@ create table if not exists public.hr_payroll_run_lines (
 create index if not exists hr_payroll_run_lines_run_idx
   on public.hr_payroll_run_lines(run_id, payee_type, payee_name);
 
--- Component-level breakdown for each line (earnings, deductions, employer
--- contributions), used to render payslips and the on-screen breakdown.
 create table if not exists public.hr_payroll_run_line_items (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete cascade,
@@ -164,7 +162,6 @@ create table if not exists public.hr_payroll_run_line_items (
 create index if not exists hr_payroll_run_line_items_line_idx
   on public.hr_payroll_run_line_items(run_line_id, display_order);
 
--- Payee (employee or contractor) must belong to the run's company.
 create or replace function public.hr_validate_payee()
 returns trigger
 language plpgsql
@@ -231,6 +228,157 @@ begin
     'hr_pay_packages',
     'hr_payroll_run_lines',
     'hr_payroll_run_line_items'
+  ] loop
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'public'
+        and tablename = table_name
+        and policyname = 'service_role_' || table_name || '_all'
+    ) then
+      execute format(
+        'create policy %I on public.%I for all using (auth.role() = ''service_role'') with check (auth.role() = ''service_role'')',
+        'service_role_' || table_name || '_all',
+        table_name
+      );
+    end if;
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- From 20260807100000_hr_payroll_station_packages.sql
+-- ---------------------------------------------------------------------------
+
+alter table public.hr_payroll_run_lines
+  add column if not exists location_id uuid references public.stations(id) on delete set null;
+
+create index if not exists hr_payroll_run_lines_location_idx
+  on public.hr_payroll_run_lines(run_id, location_id);
+
+update public.hr_payroll_run_lines line
+set location_id = employee.location_id
+from public.employees employee
+where line.payee_type = 'employee'
+  and line.payee_id = employee.id
+  and line.location_id is null;
+
+update public.hr_payroll_run_lines line
+set location_id = contractor.location_id
+from public.contractors contractor
+where line.payee_type = 'contractor'
+  and line.payee_id = contractor.id
+  and line.location_id is null;
+
+create table if not exists public.hr_package_rate_defaults (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  package_type text not null,
+  rate numeric(14,2) not null default 0,
+  updated_by uuid,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  constraint hr_package_rate_defaults_type_check check (
+    package_type in ('delivery_package', 'mfn_pickup', 'amazon_pickup', 'mfn_return')
+  ),
+  constraint hr_package_rate_defaults_rate_check check (rate >= 0),
+  unique (company_id, package_type)
+);
+
+create table if not exists public.hr_package_rate_overrides (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  payee_type text not null,
+  payee_id uuid not null,
+  package_type text not null,
+  rate numeric(14,2) not null,
+  updated_by uuid,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  constraint hr_package_rate_overrides_payee_type_check check (payee_type in ('employee', 'contractor')),
+  constraint hr_package_rate_overrides_type_check check (
+    package_type in ('delivery_package', 'mfn_pickup', 'amazon_pickup', 'mfn_return')
+  ),
+  constraint hr_package_rate_overrides_rate_check check (rate >= 0),
+  unique (company_id, payee_type, payee_id, package_type)
+);
+
+create table if not exists public.hr_payroll_package_entries (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  run_id uuid not null references public.hr_payroll_runs(id) on delete cascade,
+  run_line_id uuid not null references public.hr_payroll_run_lines(id) on delete cascade,
+  payee_type text not null,
+  payee_id uuid not null,
+  package_type text not null,
+  quantity numeric(12,2) not null default 0,
+  rate numeric(14,2) not null default 0,
+  amount numeric(14,2) not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint hr_payroll_package_entries_payee_type_check check (payee_type in ('employee', 'contractor')),
+  constraint hr_payroll_package_entries_type_check check (
+    package_type in ('delivery_package', 'mfn_pickup', 'amazon_pickup', 'mfn_return')
+  ),
+  constraint hr_payroll_package_entries_quantity_check check (quantity >= 0),
+  constraint hr_payroll_package_entries_rate_check check (rate >= 0),
+  constraint hr_payroll_package_entries_amount_check check (amount >= 0),
+  unique (run_line_id, package_type)
+);
+
+create index if not exists hr_payroll_package_entries_run_idx
+  on public.hr_payroll_package_entries(run_id, run_line_id);
+
+create index if not exists hr_package_rate_overrides_payee_idx
+  on public.hr_package_rate_overrides(company_id, payee_type, payee_id);
+
+insert into public.hr_package_rate_defaults (company_id, package_type, rate)
+select company.id, package_type.type, 0
+from public.companies company
+cross join (
+  values
+    ('delivery_package'),
+    ('mfn_pickup'),
+    ('amazon_pickup'),
+    ('mfn_return')
+) as package_type(type)
+where company.is_active
+on conflict (company_id, package_type) do nothing;
+
+drop trigger if exists hr_package_rate_defaults_touch_updated_at on public.hr_package_rate_defaults;
+create trigger hr_package_rate_defaults_touch_updated_at
+before update on public.hr_package_rate_defaults
+for each row execute function public.hr_touch_updated_at();
+
+drop trigger if exists hr_package_rate_overrides_touch_updated_at on public.hr_package_rate_overrides;
+create trigger hr_package_rate_overrides_touch_updated_at
+before update on public.hr_package_rate_overrides
+for each row execute function public.hr_touch_updated_at();
+
+drop trigger if exists hr_payroll_package_entries_touch_updated_at on public.hr_payroll_package_entries;
+create trigger hr_payroll_package_entries_touch_updated_at
+before update on public.hr_payroll_package_entries
+for each row execute function public.hr_touch_updated_at();
+
+drop trigger if exists hr_package_rate_overrides_validate_payee on public.hr_package_rate_overrides;
+create trigger hr_package_rate_overrides_validate_payee
+before insert or update on public.hr_package_rate_overrides
+for each row execute function public.hr_validate_payee();
+
+drop trigger if exists hr_payroll_package_entries_validate_payee on public.hr_payroll_package_entries;
+create trigger hr_payroll_package_entries_validate_payee
+before insert or update on public.hr_payroll_package_entries
+for each row execute function public.hr_validate_payee();
+
+alter table public.hr_package_rate_defaults enable row level security;
+alter table public.hr_package_rate_overrides enable row level security;
+alter table public.hr_payroll_package_entries enable row level security;
+
+do $$
+declare table_name text;
+begin
+  foreach table_name in array array[
+    'hr_package_rate_defaults',
+    'hr_package_rate_overrides',
+    'hr_payroll_package_entries'
   ] loop
     if not exists (
       select 1 from pg_policies

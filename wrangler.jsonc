@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dropx-hrms",
+  "main": ".open-next/worker.js",
+  "account_id": "ab2dba58727809ae8bf0a21edb5fe7b8",
+  "compatibility_date": "2025-12-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "dropx-hrms"
+    }
+  ],
+  "vars": {
+    "NEXTJS_ENV": "production"
+  },
+  "workers_dev": true,
+  "preview_urls": true
+}
