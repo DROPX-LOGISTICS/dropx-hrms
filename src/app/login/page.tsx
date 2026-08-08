@@ -3,7 +3,7 @@ import Image from "next/image";
 import { SubmitButton } from "@/components/submit-button";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getHrmsAuth } from "@/lib/auth";
-import { signInWithGoogle, signOut } from "./actions";
+import { signOut } from "./actions";
 
 export default async function LoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
   const client = createServerSupabaseClient();
@@ -16,6 +16,8 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
     const next = searchParams?.next;
     redirect(next && next.startsWith("/") ? next : "/");
   }
+
+  const nextPath = searchParams?.next && searchParams.next.startsWith("/") ? searchParams.next : "/";
 
   return (
     <main className="auth-page">
@@ -39,9 +41,9 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
             </form>
           </>
         ) : (
-          <form action={signInWithGoogle}>
-            <input type="hidden" name="next" value={searchParams?.next ?? "/"} />
-            <SubmitButton className="button primary full" pendingLabel="Opening Google…">Continue with Google</SubmitButton>
+          <form action="/auth/google" method="get">
+            <input type="hidden" name="next" value={nextPath} />
+            <button className="button primary full" type="submit">Continue with Google</button>
           </form>
         )}
         <p className="fine-print">Only authorised DropX accounts can continue.</p>
